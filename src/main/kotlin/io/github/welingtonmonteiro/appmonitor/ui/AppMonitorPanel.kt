@@ -16,8 +16,12 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.JBTable
 import com.intellij.util.Alarm
+import io.github.welingtonmonteiro.appmonitor.AlertArm
+import io.github.welingtonmonteiro.appmonitor.AlertNotifier
+import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
 import io.github.welingtonmonteiro.appmonitor.AppSample
+import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import io.github.welingtonmonteiro.appmonitor.model.TargetKind
 import io.github.welingtonmonteiro.appmonitor.state.MonitoredAppsState
@@ -25,9 +29,12 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import javax.swing.JCheckBoxMenuItem
+import javax.swing.JPopupMenu
 import javax.swing.JTable
 import javax.swing.ListSelectionModel
 import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.table.TableColumn
 
 /**
  * The App Monitor tool-window UI: a docker-stats-like table over the watched apps, refreshed every
@@ -42,6 +49,9 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     private val table = JBTable(model)
     private val alarm = Alarm(Alarm.ThreadToUse.POOLED_THREAD, this)
 
+    /** appId -> armed alert flags, so each condition notifies once until it recovers. */
+    private val alertArms = HashMap<String, AlertArm>()
+
     @Volatile
     private var disposed = false
 
@@ -53,13 +63,14 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         table.emptyText.appendSecondaryText(
             "Add one by port  (＋)", com.intellij.ui.SimpleTextAttributes.LINK_ATTRIBUTES
         ) { addApp() }
-        installStatusRenderer()
-        installSparkline()
+        applyColumnVisibility()
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 val row = table.rowAtPoint(e.point)
                 if (row < 0) return
-                if (table.columnAtPoint(e.point) == AppTableModel.Column.MEM_TREND.ordinal) {
+                val viewCol = table.columnAtPoint(e.point)
+                val modelCol = if (viewCol >= 0) table.convertColumnIndexToModel(viewCol) else -1
+                if (modelCol == AppTableModel.Column.MEM_TREND.ordinal) {
                     model.sampleAt(row)?.let { openChart(it) }
                 } else if (e.clickCount == 2) {
                     editSelected()
@@ -116,6 +127,10 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
                     e.presentation.isEnabled = selectedSamples().any { it.up }
                 }
                 override fun actionPerformed(e: AnActionEvent) = forceKillSelected()
+            })
+            addSeparator()
+            add(object : DumbAwareAction("Show/Hide Columns", "Choose which columns are visible (persisted)", AllIcons.General.Settings) {
+                override fun actionPerformed(e: AnActionEvent) = showColumnChooser(e)
             })
         }
         val toolbar = ActionManager.getInstance().createActionToolbar("AppMonitor", group, true)
@@ -241,13 +256,28 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     private fun applyRows(rows: List<AppSample>) {
         val selectedIds = selectedSamples().map { it.appId }.toSet()
         model.setRows(rows)
-        if (selectedIds.isEmpty()) return
         val selection = table.selectionModel
-        selection.clearSelection()
-        for (id in selectedIds) {
-            val row = model.rowOfApp(id)
-            if (row >= 0) selection.addSelectionInterval(row, row)
+        if (selectedIds.isNotEmpty()) {
+            selection.clearSelection()
+            for (id in selectedIds) {
+                val row = model.rowOfApp(id)
+                if (row >= 0) selection.addSelectionInterval(row, row)
+            }
         }
+        evaluateAlerts(rows)
+    }
+
+    /** Raise a balloon for each app whose down/memory/CPU/leak condition just became true. */
+    private fun evaluateAlerts(rows: List<AppSample>) {
+        val appsById = state.apps().associateBy { it.id }
+        for (sample in rows) {
+            val app = appsById[sample.appId] ?: continue
+            val leaking = MemoryHistory.analyze(sampler.history(sample.appId)).isSteadyLeak()
+            val (alerts, arm) = AlertPolicy.evaluate(app, sample, leaking, alertArms[sample.appId] ?: AlertArm())
+            alertArms[sample.appId] = arm
+            alerts.forEach { AlertNotifier.notify(project, it) }
+        }
+        alertArms.keys.retainAll(rows.mapTo(HashSet()) { it.appId })
     }
 
     private fun selectedSamples(): List<AppSample> =
@@ -255,33 +285,60 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     // --- rendering -------------------------------------------------------------------------------
 
-    private fun installSparkline() {
-        val column = table.columnModel.getColumn(AppTableModel.Column.MEM_TREND.ordinal)
-        column.cellRenderer = SparklineRenderer()
-        column.preferredWidth = 90
-        column.minWidth = 60
-    }
-
     private fun openChart(sample: AppSample) {
         if (!sample.up) return
         val name = sample.name.ifBlank { sample.targetLabel }
-        MemoryChartDialog(project, name, sampler.history(sample.appId)).show()
+        MemoryChartDialog(project, name, sampler.history(sample.appId), sampler.breakdown(sample.appId)).show()
     }
 
-    private fun installStatusRenderer() {
-        val statusColumn = AppTableModel.Column.STATUS.ordinal
-        table.columnModel.getColumn(statusColumn).cellRenderer = object : DefaultTableCellRenderer() {
-            override fun getTableCellRendererComponent(
-                table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
-            ): Component {
-                val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
-                if (!isSelected) {
-                    val healthy = value == "up" || value == "healthy"
-                    foreground = if (healthy) JBColor.namedColor("Label.successForeground", JBColor.GREEN)
-                    else JBColor.namedColor("Label.errorForeground", JBColor.RED)
+    /** Rebuild the table's columns from the model, skipping the ones the user hid (Name always stays). */
+    private fun applyColumnVisibility() {
+        val hidden = state.hiddenColumns()
+        val columns = table.columnModel
+        while (columns.columnCount > 0) columns.removeColumn(columns.getColumn(0))
+        for (col in AppTableModel.Column.entries) {
+            if (col != AppTableModel.Column.NAME && col.name in hidden) continue
+            val tableColumn = TableColumn(col.ordinal).apply { headerValue = col.title }
+            when (col) {
+                AppTableModel.Column.STATUS -> tableColumn.cellRenderer = newStatusRenderer()
+                AppTableModel.Column.MEM_TREND -> {
+                    tableColumn.cellRenderer = SparklineRenderer()
+                    tableColumn.preferredWidth = 90
+                    tableColumn.minWidth = 60
                 }
-                return c
+                else -> {}
             }
+            columns.addColumn(tableColumn)
+        }
+    }
+
+    private fun showColumnChooser(e: AnActionEvent) {
+        val menu = JPopupMenu()
+        val hidden = state.hiddenColumns()
+        for (col in AppTableModel.Column.entries) {
+            val item = JCheckBoxMenuItem(col.title, col.name !in hidden)
+            if (col == AppTableModel.Column.NAME) item.isEnabled = false // the anchor column stays visible
+            item.addActionListener {
+                state.setColumnHidden(col.name, !item.isSelected)
+                applyColumnVisibility()
+            }
+            menu.add(item)
+        }
+        val source = e.inputEvent?.component
+        if (source != null) menu.show(source, 0, source.height) else menu.show(table, 0, 0)
+    }
+
+    private fun newStatusRenderer(): DefaultTableCellRenderer = object : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
+        ): Component {
+            val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+            if (!isSelected) {
+                val healthy = value == "up" || value == "healthy"
+                foreground = if (healthy) JBColor.namedColor("Label.successForeground", JBColor.GREEN)
+                else JBColor.namedColor("Label.errorForeground", JBColor.RED)
+            }
+            return c
         }
     }
 

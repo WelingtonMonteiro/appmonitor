@@ -6,8 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Fase 1 (remaining): per-process breakdown of the tree, alerts/notifications (app down, mem/CPU
-  over the limit, leak detected), and a persisted column chooser. See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Next: Fase 2 — auto-discovery of listening ports, groups/tags, status-bar widget. See
+  [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.3.0] - 2026-07-09
+
+**Fase 1 completed — alerts, process breakdown, column chooser.**
+
+### Added
+- **Alerts & notifications**: an IDE balloon fires when an app **goes down**, when its **memory** or
+  **CPU** crosses the alert threshold you set on it, or when a **steady memory leak** is detected.
+  Each condition fires once (edge-triggered) and re-arms when the app recovers, so it never spams.
+- **Per-process breakdown**: the memory chart gained a **Processes** tab listing every PID of the
+  app's tree with its command, memory and share of the tree — a runaway child is easy to spot.
+- **Show/hide columns** from the toolbar, **persisted per project**.
 
 ## [0.2.0] - 2026-07-09
 
@@ -55,6 +67,7 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/WelingtonMonteiro/appmonitor/releases/tag/v0.1.0

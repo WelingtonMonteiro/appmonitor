@@ -34,15 +34,15 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] 🔧 **Windows desde o dia 1** (netstat/PowerShell) — dívida que o MR deixou para trás.
 - [x] 🔧 **Testes de lógica pura** (parsing netstat/lsof, resolução de alvo, round-trip de persistência). 36 testes.
 
-## Fase 1 — Observabilidade rica — 🚧 parcial (v0.2.0)
+## Fase 1 — Observabilidade rica — ✅ completa (v0.2.0–v0.3.0)
 
 - [x] 🔁 **Sparkline de tendência de memória** por app. (v0.2.0)
 - [x] 🔁 **Gráfico de sessão completa** (eixos X/Y, pico) + **análise de memory-leak**
       (slope KB/min, R², fração monótona, veredito) + **export** (.txt/.csv). (v0.2.0)
-- [ ] 🔁 **Breakdown por processo** da árvore (PID/comando/memória/% da árvore).
+- [x] 🔁 **Breakdown por processo** da árvore (PID/comando/memória/% da árvore). (v0.3.0, aba Processes)
 - [x] 🆕 **Health check HTTP** por app (2xx/3xx = healthy), além do check de porta. (v0.2.0)
-- [ ] 🆕 **Alertas + notificações**: app caiu, mem/CPU acima do limite, leak, porta liberou/ocupou.
-- [ ] 🔁 **Seletor de colunas** (mostrar/ocultar) — **persistido** (o MR não persistia).
+- [x] 🆕 **Alertas + notificações**: app caiu, mem/CPU acima do limite, leak detectado. (v0.3.0)
+- [x] 🔁 **Seletor de colunas** (mostrar/ocultar) — **persistido**. (v0.3.0)
 
 ## Fase 2 — Organização e descoberta
 
@@ -74,7 +74,7 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 |---|---|:--:|:--:|:--:|---|
 | `ProcessStatsSampler` | 0 | [x] | [x] | [ ] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Camada Windows (netstat/PowerShell) adicionada. Fica em Java por ora. |
 | `MemoryHistory` (+ `Analysis`) | 1 | [x] | n/a | [x] | histórico + análise de leak (slope/R²/monótono). **Escrito direto em Kotlin.** |
-| `MemoryChartDialog` | 1 | [x] | n/a | [x] | gráfico de sessão + análise + export. **Reescrito em Kotlin** (`MemoryChartDialog.kt`), sem deps do MR. Breakdown por processo fica p/ depois. |
+| `MemoryChartDialog` | 1 | [x] | n/a | [x] | gráfico de sessão + análise + **breakdown por processo** (aba Processes) + export. **Reescrito em Kotlin**, sem deps do MR. |
 | Renderers de tabela (sparkline/ports/status) | 0–1 | [ ] | n/a | [ ] | reaproveitáveis do `MultirunMonitorPanel`. |
 
 **Não vem do MR** (dependem de `RunContentManager`/`ProcessHandler`/orquestração do grupo):

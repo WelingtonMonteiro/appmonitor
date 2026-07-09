@@ -2,6 +2,9 @@ package io.github.welingtonmonteiro.appmonitor
 
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
 
+/** One process of an app's tree, for the per-process breakdown in the memory chart. */
+data class ProcRow(val pid: Long, val command: String, val rssKb: Long, val pctOfTree: Double)
+
 /**
  * Runs one refresh cycle over the watched apps: resolve each target to a live PID, then sample the
  * whole process tree of every resolved app in **batched** {@code ps}/{@code lsof} (or
@@ -21,6 +24,8 @@ class AppMonitorSampler {
     /** appId -> recorded memory session, guarded by [historyLock] (read from EDT, written here). */
     private val historyByApp = HashMap<String, ArrayDeque<MemoryHistory.Sample>>()
     private val lastRootPidByApp = HashMap<String, Long>()
+    /** appId -> latest per-process breakdown of the tree, guarded by [historyLock]. */
+    private val breakdownByApp = HashMap<String, List<ProcRow>>()
     private val historyLock = Any()
 
     /** Resolve + measure every app; order of the result matches the input order. */
@@ -73,6 +78,7 @@ class AppMonitorSampler {
             val memPercent = ProcessStatsSampler.memoryPercent(stats.rssKb, limitMb, hostTotalKb)
             val memTrend = recordHistory(app.id, rootPid, now, stats.rssKb, memPercent)
             val health = HealthChecker.healthOf(app.healthUrl)
+            recordBreakdown(app.id, tree, statsByPid, stats.rssKb)
 
             rows.add(
                 AppSample(
@@ -117,6 +123,22 @@ class AppMonitorSampler {
     /** A snapshot of the full recorded memory session of an app (safe to read off the EDT). */
     fun history(appId: String): List<MemoryHistory.Sample> = synchronized(historyLock) {
         historyByApp[appId]?.toList() ?: emptyList()
+    }
+
+    /** Builds the per-process breakdown of a tree (each pid's RSS and share of the whole). */
+    private fun recordBreakdown(appId: String, tree: Set<Long>, statsByPid: Map<Long, ProcessStatsSampler.Stats>, treeTotalKb: Long) {
+        val total = treeTotalKb.coerceAtLeast(1)
+        val procRows = tree.mapNotNull { pid ->
+            statsByPid[pid]?.let { st ->
+                ProcRow(pid, ProcessStatsSampler.processCommand(pid), st.rssKb, st.rssKb * 100.0 / total)
+            }
+        }.sortedByDescending { it.rssKb }
+        synchronized(historyLock) { breakdownByApp[appId] = procRows }
+    }
+
+    /** A snapshot of the latest per-process breakdown of an app's tree (safe to read off the EDT). */
+    fun breakdown(appId: String): List<ProcRow> = synchronized(historyLock) {
+        breakdownByApp[appId] ?: emptyList()
     }
 
     private companion object {

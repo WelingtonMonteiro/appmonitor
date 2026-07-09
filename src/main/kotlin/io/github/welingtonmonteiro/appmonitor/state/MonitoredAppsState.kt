@@ -18,10 +18,14 @@ import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
 @State(name = "AppMonitor", storages = [Storage("appMonitor.xml")])
 class MonitoredAppsState : PersistentStateComponent<MonitoredAppsState.State> {
 
-    /** The serialized shape: a plain holder for the list of app definitions. */
+    /** The serialized shape: the list of app definitions plus panel preferences. */
     class State {
         @XCollection(propertyElementName = "apps", style = XCollection.Style.v2)
         var apps: MutableList<MonitoredApp> = mutableListOf()
+
+        /** Column names (see AppTableModel.Column) the user chose to hide - persisted per project. */
+        @XCollection(propertyElementName = "hiddenColumns", style = XCollection.Style.v2)
+        var hiddenColumns: MutableList<String> = mutableListOf()
     }
 
     private var state = State()
@@ -54,6 +58,16 @@ class MonitoredAppsState : PersistentStateComponent<MonitoredAppsState.State> {
     /** True when an app already watches this exact TCP port (used to warn on duplicates). */
     fun hasPort(port: Int): Boolean = state.apps.any {
         it.targetKind == io.github.welingtonmonteiro.appmonitor.model.TargetKind.PORT && it.port == port
+    }
+
+    fun hiddenColumns(): Set<String> = state.hiddenColumns.toSet()
+
+    fun setColumnHidden(columnName: String, hidden: Boolean) {
+        if (hidden) {
+            if (!state.hiddenColumns.contains(columnName)) state.hiddenColumns.add(columnName)
+        } else {
+            state.hiddenColumns.remove(columnName)
+        }
     }
 
     companion object {
