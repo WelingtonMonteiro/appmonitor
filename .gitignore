@@ -4,3 +4,5 @@ dist/
 .gradle/
 .intellijPlatform/
 *.iml
+local.properties
+.claude/

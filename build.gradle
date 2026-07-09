@@ -1,0 +1,132 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    // Kotlin is the primary language; a few reused classes stay in Java for now (src/main/java),
+    // to be converted one-by-one later (IntelliJ: Convert Java File to Kotlin File).
+    id "org.jetbrains.kotlin.jvm" version "2.2.20"
+    id "org.jetbrains.intellij.platform" version "2.17.0"
+}
+
+group = 'io.github.welingtonmonteiro'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+
+    intellijPlatform {
+        // Same target platform as Multiple Run (2023.3 / build 233).
+        intellijIdeaCommunity('2023.3')
+        // JetBrains Plugin Verifier + zip signer
+        pluginVerifier()
+        zipSigner()
+    }
+}
+
+// Compile with the locally installed JBR 21 (see org.gradle.java.installations.paths in
+// gradle.properties) but cross-compile to Java 17 bytecode, so the plugin stays loadable on the
+// 2023.3 runtime (JBR 17) - which is also the JVM the plugin tests run on. The target is forced per
+// task (release / jvmTarget) because the 21 toolchain otherwise drags every output up to 21.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release.set(17)
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        // Stay compatible with the Kotlin runtime bundled in 2023.3 (Kotlin 1.9.x).
+        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+    }
+}
+
+// Load the plugin repo api key from local.properties (same setup as Multiple Run)
+Properties properties = new Properties()
+def propertiesFile = project.rootProject.file('local.properties')
+if (propertiesFile.exists()) {
+    properties.load(propertiesFile.newDataInputStream())
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        name = 'App Monitor'
+        ideaVersion {
+            sinceBuild = '233'
+            untilBuild = provider { null }
+        }
+    }
+
+    // No Settings pages yet - nothing to index, and the headless run is flaky (lesson from MR).
+    buildSearchableOptions = false
+
+    // JetBrains Plugin Verifier against the same IDE matrix the Marketplace runs.
+    // Run a subset with: ./gradlew verifyPlugin -PverifierIdes=2023.3.8,2026.1.4
+    pluginVerification {
+        failureLevel = [
+                org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS,
+                org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.MISSING_DEPENDENCIES,
+                org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel.INVALID_PLUGIN,
+        ]
+        ides {
+            def marketplaceMatrix = '2023.3.8,2024.1.7,2024.2.6,2024.3.7.1,' +
+                                    '2025.1.7.1,2025.2.6.2,2025.3.6,2026.1.4'
+            String requested = (findProperty('verifierIdes') ?: marketplaceMatrix)
+            requested.split(',').each { v ->
+                def version = v.trim()
+                def parts = version.split('\\.')
+                def major = parts[0].toInteger()
+                def minor = parts.length > 1 ? parts[1].toInteger() : 0
+                if (major > 2025 || (major == 2025 && minor >= 3)) {
+                    // Community edition is no longer published since 2025.3
+                    create(org.jetbrains.intellij.platform.gradle.IntelliJPlatformType.IntellijIdea, version)
+                } else {
+                    create('IC', version)
+                }
+            }
+        }
+    }
+
+    publishing {
+        def hubToken = properties.getProperty('hub.token')
+        if (hubToken != null) {
+            token = hubToken
+        }
+    }
+}
+
+// Keep a rolling archive of the last built plugin zips in dist/ (survives `gradlew clean`).
+def pluginArchiveDir = file("$rootDir/dist")
+def KEEP_LAST_ZIPS = 5
+
+tasks.register('archivePluginZip') {
+    description = "Copy the built plugin zip into dist/ and keep only the last ${KEEP_LAST_ZIPS}."
+    doLast {
+        pluginArchiveDir.mkdirs()
+        fileTree(dir: layout.buildDirectory.dir('distributions').get().asFile, include: '*.zip').files.each { zip ->
+            java.nio.file.Files.copy(zip.toPath(),
+                    new File(pluginArchiveDir, zip.name).toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+        def zips = pluginArchiveDir.listFiles({ dir, name -> name.endsWith('.zip') } as FilenameFilter)
+        if (zips != null && zips.length > KEEP_LAST_ZIPS) {
+            def newestFirst = zips.toList().sort(false) { -it.lastModified() }
+            newestFirst.drop(KEEP_LAST_ZIPS).each { it.delete() }
+        }
+    }
+}
+
+tasks.named('buildPlugin').configure {
+    finalizedBy('archivePluginZip')
+}

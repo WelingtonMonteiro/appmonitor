@@ -1,0 +1,56 @@
+<idea-plugin url="https://github.com/WelingtonMonteiro/appmonitor">
+    <id>io.github.welingtonmonteiro.appmonitor</id>
+    <name>App Monitor</name>
+    <!-- version is injected from build.gradle (project.version) by patchPluginXml -->
+    <vendor url="https://github.com/WelingtonMonteiro" email="welington.rmonteiro@gmail.com">Welington Monteiro</vendor>
+
+    <description>
+        <![CDATA[
+        <p><b>App Monitor</b> turns the IDE into a live runtime dashboard for the apps you care about -
+        <b>independent of how they were started</b> (IDE run config, terminal, docker, system service).
+        Add an app by <b>name + port</b> and the panel shows its memory, CPU, listening ports, uptime and
+        up/down status, refreshing automatically like <code>docker stats</code>.</p>
+
+        <p>Unlike a launcher, App Monitor tracks <b>targets</b> (a TCP port, a process name, a PID), not the
+        process the IDE launched - so it can watch anything running on your machine. If an app is not found
+        on a refresh it shows <b>down</b>, and flips back to <b>up</b> when it reappears.</p>
+
+        <p>MVP features:</p>
+        <ul>
+            <li>Tool window with a live table: Name, Port(s), PID, Uptime, Status, Memory, Mem %, CPU %.</li>
+            <li>Add an app by port (optional: process-name / PID target, health URL, alert limits, tag).</li>
+            <li>Kill the process listening on a port (and its whole tree) - goodbye <code>EADDRINUSE</code>.</li>
+            <li>The list of monitored apps is persisted per project.</li>
+            <li>Works on Linux, macOS and Windows.</li>
+        </ul>
+
+        <p>Spun off from the Multiple Run Monitor (part of the
+        <a href="https://github.com/WelingtonMonteiro/multiple_run">Multiple Run</a> plugin).</p>
+        ]]>
+    </description>
+
+    <change-notes>
+        <![CDATA[
+        <p><strong>0.1.0</strong> (MVP):</p>
+        <ul>
+            <li>New: "App Monitor" tool window - add an app by port and watch its memory, CPU, ports,
+                uptime and up/down status live, whatever launched it.</li>
+            <li>New: kill the process listening on a TCP port (whole process tree).</li>
+            <li>The monitored apps list is persisted per project. Linux, macOS and Windows.</li>
+        </ul>
+        ]]>
+    </change-notes>
+
+    <idea-version since-build="233.0000"/>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="App Monitor" anchor="bottom" canCloseContents="false"
+                    icon="AllIcons.Toolwindows.ToolWindowRun"
+                    factoryClass="io.github.welingtonmonteiro.appmonitor.ui.AppMonitorToolWindowFactory"/>
+        <!-- balloon notifications (app down, memory/CPU alerts) -->
+        <notificationGroup id="App Monitor" displayType="BALLOON"/>
+    </extensions>
+</idea-plugin>
