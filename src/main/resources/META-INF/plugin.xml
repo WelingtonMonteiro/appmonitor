@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.6.0</strong> (start / stop / restart):</p>
+        <ul>
+            <li>New: give an app a <b>start command</b> (and optional stop command, working directory
+                and <code>.env</code> file) and <b>Start / Stop / Restart</b> it from the toolbar -
+                App Monitor becomes a small process manager for apps it did not launch. Stop falls
+                back to killing the tree when no stop command is set.</li>
+        </ul>
         <p><strong>0.5.0</strong> (tags &amp; filter):</p>
         <ul>
             <li>New: give each app a <b>tag</b> and a <b>colour</b> - a new Tag column shows it in that

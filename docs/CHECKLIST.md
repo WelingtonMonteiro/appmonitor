@@ -53,9 +53,9 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [ ] 🆕 **Env viewer** para apps com env conhecido (`.env` informado ou ponte com run config).
 - [ ] 🆕 **Múltiplos alvos por app** (2 portas; ou nome + porta).
 
-## Fase 3 — Mini gerenciador (opcional)
+## Fase 3 — Mini gerenciador (opcional) — 🚧 parcial (v0.6.0)
 
-- [ ] 🆕 **Start / Stop / Restart via comando do usuário** por app (working dir + comando + env).
+- [x] 🆕 **Start / Stop / Restart via comando do usuário** por app (working dir + comando + `.env`). (v0.6.0)
 - [ ] 🆕 **Docker-aware**: `docker stats`/CLI (nome do container como alvo).
 - [ ] 🆕 **Página de Settings**: intervalos, limites padrão, cores, comportamento de alerta.
 - [ ] 🆕 **Ponte com o Multiple Run**: importar apps que o MR lançou.
