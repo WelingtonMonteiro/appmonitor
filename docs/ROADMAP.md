@@ -1,5 +1,21 @@
 # Roadmap — App Monitor
 
+## Visão geral
+
+Um botão **"Adicionar app"** → você digita **nome + porta** (e, opcionalmente, uma URL de health, um
+comando de start/stop, limites de alerta) → o painel passa a mostrar aquele app ao vivo, **mesmo que
+ele tenha subido fora da IDE**.
+
+A decisão central de arquitetura: rastrear **alvos** (porta / nome de processo / PID) re-resolvidos a
+cada refresh, em vez de depender do processo que a IDE lançou. Assim o monitor enxerga **qualquer**
+processo (IDE, terminal, docker, serviço do sistema) e mostra **down** quando o alvo some e **up**
+quando volta. Detalhes em [ARQUITETURA.md](ARQUITETURA.md).
+
+Nomes candidatos (nome ainda provisório): App Monitor · Runtime Monitor · Port Monitor · Live Apps ·
+Process Pulse · DevMonitor.
+
+## Fases
+
 Roadmap por fases. Cada fase é entregável sozinha. A regra de ouro: **Fase 0 tem que valer a pena
 mesmo que nada mais seja feito** (adicionar um app por porta e ver mem/cpu ao vivo já é útil).
 

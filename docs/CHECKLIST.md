@@ -13,26 +13,26 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] **Classes reaproveitadas ficam em Java temporariamente** (interop Kotlin↔Java), migradas
       **uma por vez** depois via *Code → Convert Java File to Kotlin File* do IntelliJ.
 - [x] **Escopo da primeira leva: Fase 0 (MVP) completo.**
-- [ ] id do plugin: `io.github.welingtonmonteiro.appmonitor` (confirmar disponível no Marketplace).
+- [x] id do plugin: `io.github.welingtonmonteiro.appmonitor` (vendor criado no Marketplace).
 - [ ] Nome final (provisório: "App Monitor" — ver candidatos no README).
 
 ---
 
-## Fase 0 — MVP: "adicione um app e veja ele ao vivo"
+## Fase 0 — MVP: "adicione um app e veja ele ao vivo" — ✅ v0.1.0
 
-- [ ] 🆕 **Build Kotlin+Java** (IntelliJ Platform Gradle Plugin 2.x, Gradle 9, JBR 21, sinceBuild 233+).
-- [ ] 🆕 **plugin.xml** (id, tool window, notificationGroup) + ícones do plugin.
-- [ ] 🆕 **Tool window "App Monitor"** com tabela estilo docker-stats.
-- [ ] 🆕 **Modelo `MonitoredApp` + `Target`** (Port / ProcessName / Pid).
-- [ ] 🆕 **Diálogo "Adicionar app"**: nome + porta (mínimo); campos opcionais previstos no modelo
-      (health URL, start/stop cmd, working dir, `.env`, limites de alerta, tag/cor).
-- [ ] 🆕 **Resolução por porta** a cada refresh: PID em LISTEN → árvore de processos.
-- [ ] 🔁 **Colunas ao vivo**: Nome · Porta(s) · PID · Uptime · Status (up/down) · Mem · Mem % · CPU %.
-- [ ] 🔁 **Kill por porta / árvore** (o clássico do `EADDRINUSE`).
-- [ ] 🆕 **Persistência da lista de apps** por projeto (`PersistentStateComponent`).
-- [ ] 🔁 **Status up/down** (achou/não achou o alvo no refresh).
-- [ ] 🔧 **Windows desde o dia 1** (netstat/PowerShell) — dívida que o MR deixou para trás.
-- [ ] 🔧 **Testes de lógica pura** (parsing netstat/lsof, resolução de alvo, round-trip de persistência).
+- [x] 🆕 **Build Kotlin+Java** (IntelliJ Platform Gradle Plugin 2.x, Gradle 9, JBR 21→bytecode 17, sinceBuild 233+).
+- [x] 🆕 **plugin.xml** (id, tool window, notificationGroup) + ícones do plugin.
+- [x] 🆕 **Tool window "App Monitor"** com tabela estilo docker-stats.
+- [x] 🆕 **Modelo `MonitoredApp` + `Target`** (Port / ProcessName / Pid).
+- [x] 🆕 **Diálogo "Adicionar app"**: nome + porta (mínimo); campos opcionais previstos no modelo
+      (health URL, limites de alerta, tag — start/stop/workdir/.env reservados p/ fases seguintes).
+- [x] 🆕 **Resolução por porta** a cada refresh: PID em LISTEN → árvore de processos.
+- [x] 🔁 **Colunas ao vivo**: Nome · Porta(s) · PID · Uptime · Status (up/down) · Mem · Mem % · CPU %.
+- [x] 🔁 **Kill por porta / árvore** (o clássico do `EADDRINUSE`).
+- [x] 🆕 **Persistência da lista de apps** por projeto (`PersistentStateComponent`).
+- [x] 🔁 **Status up/down** (achou/não achou o alvo no refresh).
+- [x] 🔧 **Windows desde o dia 1** (netstat/PowerShell) — dívida que o MR deixou para trás.
+- [x] 🔧 **Testes de lógica pura** (parsing netstat/lsof, resolução de alvo, round-trip de persistência). 36 testes.
 
 ## Fase 1 — Observabilidade rica
 
@@ -72,7 +72,7 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 
 | Classe (MR) | Fase | Copiada | Windows | → Kotlin | Observação |
 |---|---|:--:|:--:|:--:|---|
-| `ProcessStatsSampler` | 0 | [ ] | [ ] | [ ] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Precisa camada Windows. |
+| `ProcessStatsSampler` | 0 | [x] | [x] | [ ] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Camada Windows (netstat/PowerShell) adicionada. Fica em Java por ora. |
 | `MemoryHistory` (+ `Analysis`) | 1 | [ ] | n/a | [ ] | histórico + análise de leak (slope/R²/monótono). IDE-free. |
 | `MemoryChartDialog` | 1 | [ ] | n/a | [ ] | gráfico + análise + breakdown + export. Tirar deps do MR. |
 | Renderers de tabela (sparkline/ports/status) | 0–1 | [ ] | n/a | [ ] | reaproveitáveis do `MultirunMonitorPanel`. |

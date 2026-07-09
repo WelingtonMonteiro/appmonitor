@@ -1,75 +1,81 @@
-# App Monitor (nome provisório)
+# App Monitor
 
-> Plugin JetBrains (IntelliJ / WebStorm / …) que transforma a IDE num **painel de runtime**
-> para os apps que você acompanha — **independente de como foram iniciados** (run config da IDE,
-> terminal, docker, serviço do sistema). Você adiciona um app por **nome + porta** e ele mostra
-> memória, CPU, portas, uptime, saúde e análise de memory-leak ao vivo.
+> A JetBrains IDE plugin that turns your IDE into a **live runtime dashboard** for the apps you care
+> about — **independent of how they were started** (IDE run configuration, terminal, docker, system
+> service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
+> up/down status refresh live, like `docker stats`.
 
-**Status: só planejamento.** Este repositório guarda a ideia, o roadmap e a arquitetura para
-construirmos depois. Nada implementado ainda.
+**Status:** Fase 0 (MVP) shipped — **v0.1.0**. See the [CHANGELOG](CHANGELOG.md) for what changed in
+each version and the [ROADMAP](docs/ROADMAP.md) for what comes next.
 
-Origem: nasceu do **Multiple Run Monitor** (do plugin
-[Multiple Run](https://github.com/WelingtonMonteiro/multiple_run)), que ficou bom demais para viver
-só como aba de um plugin de orquestração. A ideia é extrair a experiência de monitoramento num
-produto próprio, focado em **quem só quer observar apps rodando**.
+Compatible with IntelliJ IDEA, WebStorm, PyCharm, PhpStorm and other IntelliJ-based IDEs **2023.3+**.
 
 ---
 
-## A ideia em uma frase
+## What it is
 
-Um botão **"Adicionar app"** → você digita **nome + porta** (e, opcionalmente, uma URL de health,
-um comando de start/stop, limites de alerta) → o painel passa a mostrar aquele app ao vivo, mesmo
-que ele tenha subido fora da IDE.
+App Monitor tracks **targets**, not the process the IDE launched. A target is a **TCP port**, a
+**process-name pattern** or a **PID**, and it is re-resolved to a live process on every refresh — so
+the plugin can watch anything running on your machine, whatever launched it. When a target can't be
+found it shows **down**, and flips back to **up** the moment it reappears.
 
-## Por que um plugin separado (e não só a aba do Multiple Run)
+## Features (v0.1.0)
 
-| | Multiple Run | App Monitor |
-|---|---|---|
-| Foco | **Lançar** grupos de run configs | **Observar** apps rodando |
-| O que enxerga | Só o que a IDE lançou (tem `ProcessHandler`) | **Qualquer** processo — por porta/nome/PID |
-| Ações | Start/Stop/Restart/Debug do grupo | Monitorar, matar por porta, alertar (start/stop opcional via comando) |
-| Público | Quem usa a IDE para subir tudo | Quem roda por terminal/docker/systemd e quer um dashboard na IDE |
+- **Live table**, refreshed every 2 seconds: Name · Port(s) · PID · Uptime · Status · Memory ·
+  Mem % · CPU %. Row selection is kept across refreshes.
+- **Add apps by target**: a TCP port (the common case), a process-name regex, or a fixed PID.
+  Optional fields (health URL, memory alert, tag) are ready for upcoming features.
+- **Kill Process on Port** — kill whatever process (and its entire tree) is listening on a port, plus
+  **Force Kill** of a selected running app's process tree. Goodbye `EADDRINUSE`.
+- **Per-project persistence** — the list of monitored apps is saved per project and survives IDE
+  restarts.
+- **Cross-platform** — Linux, macOS and Windows.
+- docker-style **instantaneous CPU %** (delta of cumulative CPU time) and whole **process-tree**
+  memory aggregation.
 
-**Conclusão:** faz sentido como produto separado **porque o valor novo está em desacoplar do
-processo lançado pela IDE** — não em reempacotar o painel atual. O motor de amostragem/análise é
-altamente reaproveitável; a mudança de design é rastrear **alvos** (porta/nome), não `ProcessHandler`.
+## Installation
 
-## O que muda sem `ProcessHandler` (a decisão central de arquitetura)
+### From the JetBrains Marketplace
 
-Hoje o monitor depende do `RunContentDescriptor`/`ProcessHandler` da IDE. No standalone o app é um
-**alvo** resolvido a cada refresh:
+Once published: **Settings/Preferences → Plugins → Marketplace**, search for **App Monitor**, and
+click **Install**.
 
-- **por porta TCP** — descobre o PID em LISTEN (lsof / `netstat -ano` / PowerShell) → árvore de processos;
-- **por nome/comando** (regex no comando do processo);
-- **por PID**;
-- **por run config da IDE** (ponte opcional, para também monitorar o que a IDE lançou).
+### From a built ZIP (install from disk)
 
-Se o alvo não é encontrado num refresh → status **down** (e volta a **up** quando reaparece).
-Consequências:
+1. Build the ZIP (see [Building from source](#building-from-source)) or download a release artifact.
+2. **Settings/Preferences → Plugins → ⚙ → Install Plugin from Disk…**
+3. Select `app-monitor-<version>.zip` and restart the IDE when prompted.
 
-- ❌ **Sem "restart"** para apps externos (você não os lançou) — a menos que o usuário informe um
-  **comando de start/stop** por app (aí vira um mini gerenciador de processos, opcional).
-- ❌ **Sem pular pro console** de um app externo.
-- ⚠️ **Env viewer** só quando o env é conhecido (app lançado pela IDE, ou caminho `.env` informado).
+## Usage
 
-## O que já reaproveita do Multiple Run Monitor
+1. Open the **App Monitor** tool window (bottom tool-window stripe).
+2. Click **＋ Add App**, type a name and a **port** (or switch the target to *Process name* / *PID*).
+3. Watch it live. **Double-click** a row to edit it; use the toolbar to **Remove**, **Refresh**,
+   **Kill Process on Port** or **Force Kill** the selected app's process tree.
 
-Memória/CPU/portas/uptime ao vivo · sparkline de tendência de memória · gráfico de sessão completa +
-**análise de leak** (slope, R², monótono) + export · status healthy/down via check de porta/http ·
-seletor de colunas · **kill por porta / árvore** · alertas de memória/CPU + notificações.
+The monitored list is stored per project, so each project keeps its own set of apps.
 
-## MVP (Fase 0)
+## Building from source
 
-Tool window + **Adicionar app por porta** + memória/CPU/portas/uptime/status ao vivo + kill por porta
-+ **lista de apps persistida por projeto**. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+You need a JDK/JBR available. The build compiles with a Java 21 toolchain but emits **Java 17**
+bytecode so the plugin loads on the 2023.3 runtime. If `java` is not on your `PATH`, point
+`JAVA_HOME` at a JetBrains Runtime (for example the one bundled with a local IDE):
 
-## Nomes candidatos
+```bash
+export JAVA_HOME=/path/to/jbr
+./gradlew buildPlugin      # -> build/distributions/app-monitor-<version>.zip
+./gradlew test             # run the unit tests
+```
 
-App Monitor · Runtime Monitor · Port Monitor · Live Apps · Process Pulse · DevMonitor.
-(Verificar disponibilidade no JetBrains Marketplace e o id `io.github.welingtonmonteiro.*`.)
+Built on the **IntelliJ Platform**; primary language **Kotlin**.
 
-## Documentos
+## Roadmap & changelog
 
-- [docs/ROADMAP.md](docs/ROADMAP.md) — fases e lista completa de funcionalidades.
-- [docs/ARQUITETURA.md](docs/ARQUITETURA.md) — modelo de alvo, resolução por porta, reuso de código,
-  persistência, stack e estratégia de compartilhamento com o Multiple Run.
+- [docs/ROADMAP.md](docs/ROADMAP.md) — phased plan and the full feature list.
+- [docs/CHECKLIST.md](docs/CHECKLIST.md) — living per-phase feature checklist.
+- [docs/ARQUITETURA.md](docs/ARQUITETURA.md) — architecture notes (target model, PID resolution).
+- [CHANGELOG.md](CHANGELOG.md) — what changed in each version.
+
+## License
+
+Licensed under the **Apache License 2.0** — see [license.txt](license.txt).
