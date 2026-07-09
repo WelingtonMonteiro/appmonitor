@@ -31,6 +31,15 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.3.0</strong> (alerts, process breakdown, column chooser):</p>
+        <ul>
+            <li>New: <b>alerts &amp; notifications</b> - a balloon fires when an app <b>goes down</b>,
+                its memory or CPU crosses the alert you set, or a <b>steady memory leak</b> is
+                detected. Each fires once and re-arms when the app recovers.</li>
+            <li>New: <b>per-process breakdown</b> - the memory chart has a <b>Processes</b> tab listing
+                every PID of the app's tree with its command, memory and share of the tree.</li>
+            <li>New: <b>show/hide columns</b> from the toolbar, <b>persisted per project</b>.</li>
+        </ul>
         <p><strong>0.2.0</strong> (rich memory observability):</p>
         <ul>
             <li>New: <b>Mem trend sparkline</b> per app (last minute of memory), red when climbing,

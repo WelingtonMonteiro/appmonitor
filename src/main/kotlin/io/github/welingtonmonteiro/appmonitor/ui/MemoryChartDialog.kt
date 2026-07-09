@@ -7,9 +7,13 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.JBColor
+import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.table.JBTable
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
+import io.github.welingtonmonteiro.appmonitor.ProcRow
+import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -18,10 +22,12 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.io.IOException
+import java.util.Locale
 import javax.swing.Action
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.table.AbstractTableModel
 
 /**
  * The full-session memory chart of one app: RSS over time with labeled axes and the peak marked,
@@ -32,6 +38,7 @@ class MemoryChartDialog(
     private val project: Project?,
     private val appName: String,
     private val samples: List<MemoryHistory.Sample>,
+    private val breakdown: List<ProcRow> = emptyList(),
 ) : DialogWrapper(project) {
 
     init {
@@ -44,24 +51,47 @@ class MemoryChartDialog(
 
     override fun createCenterPanel(): JComponent {
         val root = JPanel(BorderLayout(0, 8))
-        root.preferredSize = Dimension(680, 460)
+        root.preferredSize = Dimension(700, 500)
 
         val buttons = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0))
         buttons.add(JButton("Export CSV…").apply { addActionListener { exportCsv() } })
         buttons.add(JButton("Export report…").apply { addActionListener { exportReport() } })
         root.add(buttons, BorderLayout.NORTH)
 
-        root.add(ChartPanel(samples), BorderLayout.CENTER)
+        val tabs = JBTabbedPane()
+        tabs.addTab("Chart", chartTab())
+        tabs.addTab("Processes (${breakdown.size})", ScrollPaneFactory.createScrollPane(JBTable(ProcTableModel(breakdown))))
+        root.add(tabs, BorderLayout.CENTER)
+        return root
+    }
 
+    private fun chartTab(): JComponent {
+        val panel = JPanel(BorderLayout(0, 8))
+        panel.add(ChartPanel(samples), BorderLayout.CENTER)
         val analysis = JBTextArea(MemoryHistory.summaryText(appName, MemoryHistory.analyze(samples))).apply {
             isEditable = false
             font = Font(Font.MONOSPACED, Font.PLAIN, font.size)
         }
-        val scroll = ScrollPaneFactory.createScrollPane(analysis).apply {
-            preferredSize = Dimension(680, 130)
+        panel.add(ScrollPaneFactory.createScrollPane(analysis).apply { preferredSize = Dimension(700, 130) }, BorderLayout.SOUTH)
+        return panel
+    }
+
+    /** The per-process breakdown of the app's tree (PID, command, memory and share of the tree). */
+    private class ProcTableModel(private val rows: List<ProcRow>) : AbstractTableModel() {
+        private val cols = arrayOf("PID", "Command", "Memory", "% of tree")
+        override fun getRowCount(): Int = rows.size
+        override fun getColumnCount(): Int = cols.size
+        override fun getColumnName(column: Int): String = cols[column]
+        override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean = false
+        override fun getValueAt(rowIndex: Int, columnIndex: Int): Any {
+            val row = rows[rowIndex]
+            return when (columnIndex) {
+                0 -> row.pid
+                1 -> row.command.ifBlank { "—" }
+                2 -> ProcessStatsSampler.formatMemory(row.rssKb)
+                else -> String.format(Locale.US, "%.1f%%", row.pctOfTree)
+            }
         }
-        root.add(scroll, BorderLayout.SOUTH)
-        return root
     }
 
     private fun exportCsv() = export("csv", "memory-$appName.csv", MemoryHistory.toCsv(samples))

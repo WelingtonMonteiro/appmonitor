@@ -5,9 +5,9 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.2.0** (rich memory observability). See the
-[CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
-what comes next.
+**Status:** actively developed — **v0.3.0** (Fase 1 complete: rich memory observability + alerts).
+See the [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md)
+for what comes next.
 
 Compatible with IntelliJ IDEA, WebStorm, PyCharm, PhpStorm and other IntelliJ-based IDEs **2023.3+**.
 
@@ -30,6 +30,12 @@ found it shows **down**, and flips back to **up** the moment it reappears.
   and a verdict — **export** the history to CSV or the analysis to a text report.
 - **HTTP health check** — set a health URL and the Status column shows **healthy** / **unhealthy**
   (2xx/3xx = healthy), on top of up/down.
+- **Alerts & notifications** — a balloon fires when an app goes **down**, when its **memory/CPU**
+  crosses the alert you set, or when a **steady memory leak** is detected (edge-triggered, re-arms
+  on recovery).
+- **Per-process breakdown** — the memory chart's **Processes** tab lists every PID of the tree with
+  its command, memory and share of the tree.
+- **Show/hide columns** from the toolbar, **persisted per project**.
 - **Kill Process on Port** — kill whatever process (and its entire tree) is listening on a port, plus
   **Force Kill** of a selected running app's process tree. Goodbye `EADDRINUSE`.
 - **Per-project persistence** — the list of monitored apps is saved per project and survives IDE

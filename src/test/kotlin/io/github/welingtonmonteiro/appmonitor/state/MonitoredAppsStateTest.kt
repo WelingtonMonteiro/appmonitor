@@ -74,4 +74,17 @@ class MonitoredAppsStateTest {
 
         assertFalse("a PID target of 3003 is not a port 3003", state.hasPort(3003))
     }
+
+    @Test
+    fun hiddenColumnsToggleIsIdempotent() {
+        val state = newState()
+        assertTrue(state.hiddenColumns().isEmpty())
+
+        state.setColumnHidden("CPU_PCT", true)
+        state.setColumnHidden("CPU_PCT", true) // idempotent
+        assertEquals(setOf("CPU_PCT"), state.hiddenColumns())
+
+        state.setColumnHidden("CPU_PCT", false)
+        assertTrue(state.hiddenColumns().isEmpty())
+    }
 }
