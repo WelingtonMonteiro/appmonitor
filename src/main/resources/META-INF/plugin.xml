@@ -31,6 +31,14 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.4.0</strong> (discovery &amp; status bar):</p>
+        <ul>
+            <li>New: <b>auto-discovery</b> - a toolbar button scans the machine's listening TCP ports
+                and lists the ones you are not monitoring yet (with the owning command), so you can
+                <b>add several at once</b>, each with an editable name.</li>
+            <li>New: <b>status-bar widget</b> - "App Monitor: ▲up ▼down" with the total memory in the
+                tooltip; click it to open the tool window. Toggle it from the status-bar widgets menu.</li>
+        </ul>
         <p><strong>0.3.0</strong> (alerts, process breakdown, column chooser):</p>
         <ul>
             <li>New: <b>alerts &amp; notifications</b> - a balloon fires when an app <b>goes down</b>,
@@ -69,6 +77,10 @@
         <toolWindow id="App Monitor" anchor="bottom" canCloseContents="false"
                     icon="AllIcons.Toolwindows.ToolWindowRun"
                     factoryClass="io.github.welingtonmonteiro.appmonitor.ui.AppMonitorToolWindowFactory"/>
+        <!-- status bar widget: apps up/down and total memory (click opens the monitor) -->
+        <statusBarWidgetFactory id="AppMonitor.StatusBarWidget"
+                                implementation="io.github.welingtonmonteiro.appmonitor.ui.AppMonitorStatusBarWidgetFactory"
+                                order="last"/>
         <!-- balloon notifications (app down, memory/CPU alerts) -->
         <notificationGroup id="App Monitor" displayType="BALLOON"/>
     </extensions>

@@ -12,6 +12,7 @@ import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.JBTable
@@ -20,7 +21,9 @@ import io.github.welingtonmonteiro.appmonitor.AlertArm
 import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
+import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
 import io.github.welingtonmonteiro.appmonitor.AppSample
+import io.github.welingtonmonteiro.appmonitor.DiscoveryScanner
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import io.github.welingtonmonteiro.appmonitor.model.TargetKind
@@ -91,6 +94,9 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             add(object : DumbAwareAction("Add App", "Add an app to monitor by port", AllIcons.General.Add) {
                 override fun actionPerformed(e: AnActionEvent) = addApp()
             })
+            add(object : DumbAwareAction("Discover Apps", "Scan listening ports and add unmonitored ones", AllIcons.Actions.Find) {
+                override fun actionPerformed(e: AnActionEvent) = discoverApps()
+            })
             add(object : DumbAwareAction("Remove App", "Stop monitoring the selected app(s)", AllIcons.General.Remove) {
                 override fun getActionUpdateThread() = ActionUpdateThread.EDT
                 override fun update(e: AnActionEvent) {
@@ -153,6 +159,24 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             }
             state.add(app)
             refreshNow()
+        }
+    }
+
+    private fun discoverApps() {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val monitored = state.apps()
+                .filter { it.targetKind == TargetKind.PORT }
+                .map { it.port }
+                .toSet()
+            val suggestions = DiscoveryScanner.discover(monitored)
+            ApplicationManager.getApplication().invokeLater({
+                if (disposed) return@invokeLater
+                val dialog = DiscoverAppsDialog(project, suggestions)
+                if (dialog.showAndGet()) {
+                    dialog.selectedApps().forEach { state.add(it) }
+                    refreshNow()
+                }
+            }, ModalityState.any())
         }
     }
 
@@ -265,6 +289,16 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             }
         }
         evaluateAlerts(rows)
+        updateStatusWidget(rows)
+    }
+
+    /** Push the up/down/total-memory summary to the status-bar widget. */
+    private fun updateStatusWidget(rows: List<AppSample>) {
+        val up = rows.count { it.up }
+        val totalRss = rows.filter { it.up && it.rssKb >= 0 }.sumOf { it.rssKb }
+        AppMonitorStatusService.getInstance(project).summary =
+            AppMonitorStatusService.Summary(up, rows.size - up, totalRss)
+        WindowManager.getInstance().getStatusBar(project)?.updateWidget(AppMonitorStatusBarWidget.ID)
     }
 
     /** Raise a balloon for each app whose down/memory/CPU/leak condition just became true. */

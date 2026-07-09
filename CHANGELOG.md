@@ -6,8 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Next: Fase 2 — auto-discovery of listening ports, groups/tags, status-bar widget. See
-  [docs/ROADMAP.md](docs/ROADMAP.md).
+- Fase 2 (remaining): groups/tags with colour and filters, env viewer, multiple targets per app.
+  See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.4.0] - 2026-07-09
+
+**Fase 2 (part 1) — discovery & status bar.**
+
+### Added
+- **Auto-discovery**: a toolbar button scans every TCP port in LISTEN on the machine and lists the
+  ones not already monitored, with the owning command — tick the ones you want and add them all at
+  once, each with an editable name (defaulted from the command).
+- **Status-bar widget**: a compact "App Monitor: ▲up ▼down" indicator with the total memory in its
+  tooltip; click it to open the tool window. Toggle it from the status-bar widgets menu.
 
 ## [0.3.0] - 2026-07-09
 
@@ -67,7 +78,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/WelingtonMonteiro/appmonitor/releases/tag/v0.1.0

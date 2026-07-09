@@ -339,6 +339,17 @@ public final class ProcessStatsSampler {
     }
 
     /**
+     * Every TCP port in LISTEN state on the machine mapped to its owning pid - the input to
+     * auto-discovery. Uses {@code lsof} on Linux/macOS and {@code netstat -ano} on Windows.
+     */
+    public static Map<Long, Set<Integer>> allListeningPorts() {
+        if (isWindows()) {
+            return parseNetstatListening(runCommand("netstat", "-ano", "-p", "TCP"));
+        }
+        return parseLsofOutput(runCommand("lsof", "-nP", "-iTCP", "-sTCP:LISTEN"));
+    }
+
+    /**
      * Parses regular {@code lsof -iTCP -sTCP:LISTEN} lines
      * ("{@code node 41234 user 23u IPv6 ... TCP *:3015 (LISTEN)}") into pid -> listening ports.
      * The pid is the first numeric token (command names may contain spaces); the port is the
