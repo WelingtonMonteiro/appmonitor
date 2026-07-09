@@ -94,6 +94,8 @@ class AppMonitorSampler {
                     cpuPercent = cpuPercent,
                     memTrendKb = memTrend,
                     health = health,
+                    tag = app.tag,
+                    colorRgb = app.colorRgb,
                 )
             )
         }

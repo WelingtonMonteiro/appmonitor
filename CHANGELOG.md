@@ -6,8 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Fase 2 (remaining): groups/tags with colour and filters, env viewer, multiple targets per app.
-  See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Fase 2 (remaining): per-group aggregates, env viewer, multiple targets per app. See
+  [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.5.0] - 2026-07-09
+
+**Fase 2 (part 2) — tags & filter.**
+
+### Added
+- **Tags with colour**: give an app a **tag** and a **colour** in the Add/Edit dialog; a new **Tag**
+  column shows it rendered in that colour, so backend/frontend/infra apps are easy to tell apart.
+- **Filter field** in the toolbar: narrow the table by **name, tag or port** (case-insensitive).
+  Alerts and the status-bar widget still consider every app, not just the filtered ones.
 
 ## [0.4.0] - 2026-07-09
 
@@ -78,7 +88,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.1.0...v0.2.0

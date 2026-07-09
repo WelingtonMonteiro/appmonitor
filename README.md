@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.4.0** (auto-discovery + status-bar widget). See the
+**Status:** actively developed — **v0.5.0** (tags, colours & filter). See the
 [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
 what comes next.
 
@@ -28,6 +28,8 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 - **Auto-discovery** — scan the machine's listening ports and add the unmonitored ones (with their
   owning command) in one click.
 - **Status-bar widget** — "▲up ▼down" with total memory in the tooltip; click to open the panel.
+- **Tags & colours** — tag apps (backend, frontend, infra…) with a colour, and **filter** the table
+  by name, tag or port.
 - **Memory trend sparkline** per app, plus a **full-session memory chart** with labelled axes, the
   peak marked, a **memory-leak analysis** (growth rate, per-hour projection, R², monotonic fraction)
   and a verdict — **export** the history to CSV or the analysis to a text report.

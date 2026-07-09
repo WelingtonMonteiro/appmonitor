@@ -4,11 +4,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.ColorPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
 import io.github.welingtonmonteiro.appmonitor.model.TargetKind
+import java.awt.Color
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 import javax.swing.JComponent
@@ -27,6 +29,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     private val healthField = JBTextField(24)
     private val memAlertField = JBTextField(8)
     private val tagField = JBTextField(16)
+    private val colorPanel = ColorPanel()
 
     init {
         title = if (existing == null) "Add App" else "Edit App"
@@ -52,6 +55,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         healthField.text = app.healthUrl
         memAlertField.text = if (app.memAlertMb > 0) app.memAlertMb.toString() else ""
         tagField.text = app.tag
+        if (app.colorRgb != 0) colorPanel.selectedColor = Color(app.colorRgb)
     }
 
     override fun createCenterPanel(): JComponent = FormBuilder.createFormBuilder()
@@ -62,6 +66,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         .addLabeledComponent("Health URL (optional):", healthField)
         .addLabeledComponent("Memory alert MB (optional):", memAlertField)
         .addLabeledComponent("Tag (optional):", tagField)
+        .addLabeledComponent("Tag color (optional):", colorPanel)
         .panel
 
     override fun getPreferredFocusedComponent(): JComponent = nameField
@@ -125,6 +130,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         app.healthUrl = healthField.text.trim()
         app.memAlertMb = memAlertField.text.trim().toIntOrNull() ?: 0
         app.tag = tagField.text.trim()
+        app.colorRgb = colorPanel.selectedColor?.let { it.rgb and 0xFFFFFF } ?: 0
         return app
     }
 

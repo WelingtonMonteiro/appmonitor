@@ -15,6 +15,7 @@ class AppTableModel : AbstractTableModel() {
 
     enum class Column(val title: String) {
         NAME("Name"),
+        TAG("Tag"),
         PORTS("Port(s)"),
         PID("PID"),
         UPTIME("Uptime"),
@@ -50,6 +51,7 @@ class AppTableModel : AbstractTableModel() {
         val s = rows[rowIndex]
         return when (columns[columnIndex]) {
             Column.NAME -> s.name.ifBlank { s.targetLabel }
+            Column.TAG -> s.tag
             Column.PORTS -> when {
                 s.ports.isNotEmpty() -> s.ports.joinToString(", ")
                 s.up -> "—"

@@ -30,6 +30,10 @@ data class AppSample(
     val memTrendKb: List<Long> = emptyList(),
     /** HTTP health outcome when a health URL is configured; [Health.NONE] otherwise. */
     val health: Health = Health.NONE,
+    /** The app's tag/group (for filtering and grouping); empty when none. */
+    val tag: String = "",
+    /** The app's colour packed 0xRRGGBB, or 0 for none. */
+    val colorRgb: Int = 0,
 ) {
     companion object {
         /** A down row: the app exists in the list but its target was not found this refresh. */
@@ -44,6 +48,8 @@ data class AppSample(
             rssKb = -1,
             memPercent = -1.0,
             cpuPercent = -1.0,
+            tag = app.tag,
+            colorRgb = app.colorRgb,
         )
     }
 }

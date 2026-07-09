@@ -13,11 +13,14 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.JBColor
 import com.intellij.ui.ScrollPaneFactory
+import com.intellij.ui.SearchTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.Alarm
 import io.github.welingtonmonteiro.appmonitor.AlertArm
+import io.github.welingtonmonteiro.appmonitor.AppRowFilter
 import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
@@ -29,13 +32,17 @@ import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import io.github.welingtonmonteiro.appmonitor.model.TargetKind
 import io.github.welingtonmonteiro.appmonitor.state.MonitoredAppsState
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.Dimension
 import javax.swing.JCheckBoxMenuItem
+import javax.swing.JPanel
 import javax.swing.JPopupMenu
 import javax.swing.JTable
 import javax.swing.ListSelectionModel
+import javax.swing.event.DocumentEvent
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.TableColumn
 
@@ -54,6 +61,10 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     /** appId -> armed alert flags, so each condition notifies once until it recovers. */
     private val alertArms = HashMap<String, AlertArm>()
+
+    /** The full (unfiltered) rows from the last refresh, and the current toolbar filter query. */
+    private var lastRows: List<AppSample> = emptyList()
+    private var filterQuery: String = ""
 
     @Volatile
     private var disposed = false
@@ -141,7 +152,25 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         }
         val toolbar = ActionManager.getInstance().createActionToolbar("AppMonitor", group, true)
         toolbar.targetComponent = table
-        return toolbar.component
+
+        val search = SearchTextField().apply {
+            textEditor.emptyText.text = "Filter by name, tag or port"
+            preferredSize = Dimension(220, preferredSize.height)
+            addDocumentListener(object : DocumentAdapter() {
+                override fun textChanged(e: DocumentEvent) = onFilterChanged(text)
+            })
+        }
+        val bar = JPanel(BorderLayout())
+        bar.add(toolbar.component, BorderLayout.WEST)
+        bar.add(search, BorderLayout.EAST)
+        return bar
+    }
+
+    private fun onFilterChanged(text: String) {
+        filterQuery = text
+        val selectedIds = selectedSamples().map { it.appId }.toSet()
+        model.setRows(AppRowFilter.filter(lastRows, filterQuery))
+        restoreSelection(selectedIds)
     }
 
     // --- actions ---------------------------------------------------------------------------------
@@ -278,18 +307,22 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     }
 
     private fun applyRows(rows: List<AppSample>) {
+        lastRows = rows
         val selectedIds = selectedSamples().map { it.appId }.toSet()
-        model.setRows(rows)
-        val selection = table.selectionModel
-        if (selectedIds.isNotEmpty()) {
-            selection.clearSelection()
-            for (id in selectedIds) {
-                val row = model.rowOfApp(id)
-                if (row >= 0) selection.addSelectionInterval(row, row)
-            }
-        }
-        evaluateAlerts(rows)
+        model.setRows(AppRowFilter.filter(rows, filterQuery))
+        restoreSelection(selectedIds)
+        evaluateAlerts(rows)       // alerts and the status widget consider every app, not just the filtered ones
         updateStatusWidget(rows)
+    }
+
+    private fun restoreSelection(selectedIds: Set<String>) {
+        if (selectedIds.isEmpty()) return
+        val selection = table.selectionModel
+        selection.clearSelection()
+        for (id in selectedIds) {
+            val row = model.rowOfApp(id)
+            if (row >= 0) selection.addSelectionInterval(row, row)
+        }
     }
 
     /** Push the up/down/total-memory summary to the status-bar widget. */
@@ -335,6 +368,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             val tableColumn = TableColumn(col.ordinal).apply { headerValue = col.title }
             when (col) {
                 AppTableModel.Column.STATUS -> tableColumn.cellRenderer = newStatusRenderer()
+                AppTableModel.Column.TAG -> tableColumn.cellRenderer = newTagRenderer()
                 AppTableModel.Column.MEM_TREND -> {
                     tableColumn.cellRenderer = SparklineRenderer()
                     tableColumn.preferredWidth = 90
@@ -360,6 +394,17 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         }
         val source = e.inputEvent?.component
         if (source != null) menu.show(source, 0, source.height) else menu.show(table, 0, 0)
+    }
+
+    private fun newTagRenderer(): DefaultTableCellRenderer = object : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
+        ): Component {
+            val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+            val rgb = model.sampleAt(table.convertRowIndexToModel(row))?.colorRgb ?: 0
+            if (!isSelected && rgb != 0) foreground = JBColor(Color(rgb), Color(rgb))
+            return c
+        }
     }
 
     private fun newStatusRenderer(): DefaultTableCellRenderer = object : DefaultTableCellRenderer() {

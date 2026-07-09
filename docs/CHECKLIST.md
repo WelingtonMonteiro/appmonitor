@@ -44,10 +44,11 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] 🆕 **Alertas + notificações**: app caiu, mem/CPU acima do limite, leak detectado. (v0.3.0)
 - [x] 🔁 **Seletor de colunas** (mostrar/ocultar) — **persistido**. (v0.3.0)
 
-## Fase 2 — Organização e descoberta — 🚧 parcial (v0.4.0)
+## Fase 2 — Organização e descoberta — 🚧 parcial (v0.4.0–v0.5.0)
 
 - [x] 🆕 **Auto-descoberta**: varrer portas em LISTEN e **sugerir apps** (nome do comando). (v0.4.0)
-- [ ] 🆕 **Grupos / tags** (backend, frontend, infra) com cor; filtros e agregados por grupo.
+- [x] 🆕 **Grupos / tags** (backend, frontend, infra) com cor + **filtro** por nome/tag/porta. (v0.5.0)
+      _(agregados por grupo / agrupamento colapsável ficam p/ depois)_
 - [x] 🆕 **Widget na status bar**: "▲up ▼down" + mem total no tooltip; clica e abre o painel. (v0.4.0)
 - [ ] 🆕 **Env viewer** para apps com env conhecido (`.env` informado ou ponte com run config).
 - [ ] 🆕 **Múltiplos alvos por app** (2 portas; ou nome + porta).
