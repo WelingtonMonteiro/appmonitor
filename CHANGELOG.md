@@ -27,14 +27,12 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - **Per-project persistence** of the monitored-apps list (`.idea/appMonitor.xml`), surviving IDE
   restarts.
 - **Windows support from day one** — port resolution and listening ports via `netstat`/PowerShell
-  next to `lsof`/`ps` on Linux/macOS (the cross-platform debt the Multiple Run Monitor left behind).
+  next to `lsof`/`ps` on Linux/macOS.
 - Instantaneous, docker-style **CPU %** (delta of cumulative CPU time between two samples) and whole
   **process-tree** memory aggregation.
 
 ### Notes
-- Spun off from the **Multiple Run Monitor** (part of the
-  [Multiple Run](https://github.com/WelingtonMonteiro/multiple_run) plugin). The process sampler is
-  reused from it (kept in Java for now); everything else is new and written in Kotlin.
+- Primary language is Kotlin; the process sampler is in Java for now (to be converted later).
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
