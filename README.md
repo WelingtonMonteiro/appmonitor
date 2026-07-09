@@ -5,8 +5,10 @@
 > terminal, docker, serviço do sistema). Você adiciona um app por **nome + porta** e ele mostra
 > memória, CPU, portas, uptime, saúde e análise de memory-leak ao vivo.
 
-**Status: só planejamento.** Este repositório guarda a ideia, o roadmap e a arquitetura para
-construirmos depois. Nada implementado ainda.
+**Status: Fase 0 (MVP) implementada — v0.1.0.** Já dá para adicionar um app por porta (ou nome/PID)
+e ver memória, CPU, portas, uptime e status ao vivo, além de matar processo por porta. As próximas
+fases (observabilidade rica, descoberta, mini-gerenciador) seguem no [ROADMAP](docs/ROADMAP.md).
+Veja o que mudou em cada versão no [CHANGELOG](CHANGELOG.md).
 
 Origem: nasceu do **Multiple Run Monitor** (do plugin
 [Multiple Run](https://github.com/WelingtonMonteiro/multiple_run)), que ficou bom demais para viver
@@ -58,10 +60,26 @@ Memória/CPU/portas/uptime ao vivo · sparkline de tendência de memória · gr�
 **análise de leak** (slope, R², monótono) + export · status healthy/down via check de porta/http ·
 seletor de colunas · **kill por porta / árvore** · alertas de memória/CPU + notificações.
 
-## MVP (Fase 0)
+## MVP (Fase 0) — ✅ entregue na v0.1.0
 
-Tool window + **Adicionar app por porta** + memória/CPU/portas/uptime/status ao vivo + kill por porta
-+ **lista de apps persistida por projeto**. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+Tool window + **Adicionar app por porta** (ou nome/PID) + memória/CPU/portas/uptime/status ao vivo +
+kill por porta + **lista de apps persistida por projeto**, com **Windows desde o dia 1**
+(netstat/PowerShell ao lado de lsof/ps). Detalhes no [CHANGELOG](CHANGELOG.md); próximas fases no
+[ROADMAP](docs/ROADMAP.md); progresso por fase no [CHECKLIST](docs/CHECKLIST.md).
+
+## Como buildar
+
+Precisa de um JDK/JBR (o build usa toolchain 21 e emite bytecode Java 17). Sem `java` no PATH, aponte
+o `JAVA_HOME` para um JetBrains Runtime local:
+
+```bash
+export JAVA_HOME=/caminho/para/WebStorm/jbr
+./gradlew buildPlugin       # gera build/distributions/app-monitor-<versão>.zip
+./gradlew test              # roda os testes unitários
+```
+
+Linguagem: **Kotlin** para o código novo; as classes reaproveitadas do Multiple Run ficam em **Java**
+por ora (interop), migradas uma a uma depois.
 
 ## Nomes candidatos
 
@@ -70,6 +88,8 @@ App Monitor · Runtime Monitor · Port Monitor · Live Apps · Process Pulse · 
 
 ## Documentos
 
+- [CHANGELOG.md](CHANGELOG.md) — o que mudou em cada versão.
 - [docs/ROADMAP.md](docs/ROADMAP.md) — fases e lista completa de funcionalidades.
+- [docs/CHECKLIST.md](docs/CHECKLIST.md) — checklist vivo de funcionalidades por fase (copiado vs novo).
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md) — modelo de alvo, resolução por porta, reuso de código,
   persistência, stack e estratégia de compartilhamento com o Multiple Run.
