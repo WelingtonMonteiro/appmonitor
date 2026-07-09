@@ -5,9 +5,9 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.3.0** (Fase 1 complete: rich memory observability + alerts).
-See the [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md)
-for what comes next.
+**Status:** actively developed — **v0.4.0** (auto-discovery + status-bar widget). See the
+[CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
+what comes next.
 
 Compatible with IntelliJ IDEA, WebStorm, PyCharm, PhpStorm and other IntelliJ-based IDEs **2023.3+**.
 
@@ -25,6 +25,9 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 - **Live table**, refreshed every 2 seconds: Name · Port(s) · PID · Uptime · Status · Memory ·
   Mem % · CPU % · **Mem trend**. Row selection is kept across refreshes.
 - **Add apps by target**: a TCP port (the common case), a process-name regex, or a fixed PID.
+- **Auto-discovery** — scan the machine's listening ports and add the unmonitored ones (with their
+  owning command) in one click.
+- **Status-bar widget** — "▲up ▼down" with total memory in the tooltip; click to open the panel.
 - **Memory trend sparkline** per app, plus a **full-session memory chart** with labelled axes, the
   peak marked, a **memory-leak analysis** (growth rate, per-hour projection, R², monotonic fraction)
   and a verdict — **export** the history to CSV or the analysis to a text report.
