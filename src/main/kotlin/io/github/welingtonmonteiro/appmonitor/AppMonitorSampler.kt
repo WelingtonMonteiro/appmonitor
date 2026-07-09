@@ -18,6 +18,11 @@ class AppMonitorSampler {
     private var lastSampleMs = 0L
     private val hostTotalKb = ProcessStatsSampler.hostTotalMemoryKb()
 
+    /** appId -> recorded memory session, guarded by [historyLock] (read from EDT, written here). */
+    private val historyByApp = HashMap<String, ArrayDeque<MemoryHistory.Sample>>()
+    private val lastRootPidByApp = HashMap<String, Long>()
+    private val historyLock = Any()
+
     /** Resolve + measure every app; order of the result matches the input order. */
     fun sample(apps: List<MonitoredApp>): List<AppSample> {
         val now = System.currentTimeMillis()
@@ -66,6 +71,8 @@ class AppMonitorSampler {
             val uptimeMs = if (startMs >= 0) now - startMs else -1L
             val limitMb: Int? = if (app.memAlertMb > 0) app.memAlertMb else null
             val memPercent = ProcessStatsSampler.memoryPercent(stats.rssKb, limitMb, hostTotalKb)
+            val memTrend = recordHistory(app.id, rootPid, now, stats.rssKb, memPercent)
+            val health = HealthChecker.healthOf(app.healthUrl)
 
             rows.add(
                 AppSample(
@@ -79,6 +86,8 @@ class AppMonitorSampler {
                     rssKb = stats.rssKb,
                     memPercent = memPercent,
                     cpuPercent = cpuPercent,
+                    memTrendKb = memTrend,
+                    health = health,
                 )
             )
         }
@@ -87,5 +96,33 @@ class AppMonitorSampler {
         prevCpuByApp.clear()
         prevCpuByApp.putAll(nextPrev)
         return rows
+    }
+
+    /**
+     * Appends one memory sample to the app's session and returns the last-minute RSS values for the
+     * sparkline. A change of root PID starts a fresh session (the previous process is gone). The
+     * session is capped at [MAX_SESSION_SAMPLES] so a long-lived app can't grow the history forever.
+     */
+    private fun recordHistory(appId: String, rootPid: Long, now: Long, rssKb: Long, percent: Double): List<Long> {
+        synchronized(historyLock) {
+            val history = historyByApp.getOrPut(appId) { ArrayDeque() }
+            if (lastRootPidByApp[appId] != rootPid) history.clear() // new process -> new session
+            lastRootPidByApp[appId] = rootPid
+            history.addLast(MemoryHistory.Sample(now, rssKb, if (percent < 0) 0.0 else percent))
+            while (history.size > MAX_SESSION_SAMPLES) history.removeFirst()
+            return history.toList().takeLast(TREND_SAMPLES).map { it.rssKb }
+        }
+    }
+
+    /** A snapshot of the full recorded memory session of an app (safe to read off the EDT). */
+    fun history(appId: String): List<MemoryHistory.Sample> = synchronized(historyLock) {
+        historyByApp[appId]?.toList() ?: emptyList()
+    }
+
+    private companion object {
+        /** ~2.7h at a 2s refresh - bounds the per-app history memory. */
+        const val MAX_SESSION_SAMPLES = 5000
+        /** Samples shown in the row sparkline (~last minute at a 2s refresh). */
+        const val TREND_SAMPLES = 30
     }
 }

@@ -31,6 +31,16 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.2.0</strong> (rich memory observability):</p>
+        <ul>
+            <li>New: <b>Mem trend sparkline</b> per app (last minute of memory), red when climbing,
+                green when flat/falling. Click it for the full chart.</li>
+            <li>New: <b>full-session memory chart</b> with labelled axes and the peak marked, a
+                <b>leak analysis</b> (growth rate, per-hour projection, R², how often memory was never
+                freed) and a verdict; <b>export</b> the history to CSV or the analysis to a report.</li>
+            <li>New: <b>HTTP health check</b> - set a health URL and the Status column refines to
+                <b>healthy</b>/<b>unhealthy</b> (2xx/3xx = healthy), on top of up/down.</li>
+        </ul>
         <p><strong>0.1.0</strong> (MVP):</p>
         <ul>
             <li>New: "App Monitor" tool window - add an app by port and watch its memory, CPU, ports,

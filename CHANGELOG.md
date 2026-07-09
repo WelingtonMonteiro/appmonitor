@@ -6,8 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Fase 1 (planned): memory sparkline, full-session chart + leak analysis + export, HTTP health
-  check, alerts/notifications, persisted column chooser. See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Fase 1 (remaining): per-process breakdown of the tree, alerts/notifications (app down, mem/CPU
+  over the limit, leak detected), and a persisted column chooser. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.2.0] - 2026-07-09
+
+**Fase 1 (part 1) — rich memory observability.**
+
+### Added
+- **Mem trend sparkline** column: a per-app mini-chart of the last minute of memory, coloured red
+  when it is climbing and green when flat/falling. Click it to open the full chart.
+- **Full-session memory chart** (click the sparkline or the toolbar **Memory Chart** button): RSS
+  over time with labelled axes, gridlines and the peak marked, plus a **leak analysis** — growth
+  rate (MiB/min), projection per hour, R² of the trend and how often memory was never freed — and a
+  plain verdict (stable / growing / likely leak / shrinking).
+- **Export** the memory history to **CSV** or the analysis to a **text report**.
+- **HTTP health check**: set a health URL on an app and the **Status** column refines to
+  **healthy** / **unhealthy** (2xx/3xx = healthy), on top of up/down.
+
+### Internal
+- `MemoryHistory` (leak analysis, IDE-free) is written in **Kotlin** with unit tests. Per-app memory
+  sessions are recorded across refreshes (bounded ~2.7h) and reset when the process restarts.
 
 ## [0.1.0] - 2026-07-09
 
@@ -36,5 +55,6 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/WelingtonMonteiro/appmonitor/releases/tag/v0.1.0
