@@ -87,8 +87,6 @@ Built on the **IntelliJ Platform**; primary language **Kotlin**.
 
 ## Roadmap & changelog
 
-- [docs/ROADMAP.md](docs/ROADMAP.md) — phased plan and the full feature list.
-- [docs/CHECKLIST.md](docs/CHECKLIST.md) — living per-phase feature checklist.
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md) — architecture notes (target model, PID resolution).
 - [CHANGELOG.md](CHANGELOG.md) — what changed in each version.
 
