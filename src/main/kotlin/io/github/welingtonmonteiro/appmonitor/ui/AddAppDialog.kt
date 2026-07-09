@@ -30,6 +30,10 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     private val memAlertField = JBTextField(8)
     private val tagField = JBTextField(16)
     private val colorPanel = ColorPanel()
+    private val startCmdField = JBTextField(24)
+    private val stopCmdField = JBTextField(24)
+    private val workingDirField = JBTextField(24)
+    private val envFileField = JBTextField(24)
 
     init {
         title = if (existing == null) "Add App" else "Edit App"
@@ -56,6 +60,10 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         memAlertField.text = if (app.memAlertMb > 0) app.memAlertMb.toString() else ""
         tagField.text = app.tag
         if (app.colorRgb != 0) colorPanel.selectedColor = Color(app.colorRgb)
+        startCmdField.text = app.startCmd
+        stopCmdField.text = app.stopCmd
+        workingDirField.text = app.workingDir
+        envFileField.text = app.envFile
     }
 
     override fun createCenterPanel(): JComponent = FormBuilder.createFormBuilder()
@@ -67,6 +75,11 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         .addLabeledComponent("Memory alert MB (optional):", memAlertField)
         .addLabeledComponent("Tag (optional):", tagField)
         .addLabeledComponent("Tag color (optional):", colorPanel)
+        .addSeparator()
+        .addLabeledComponent("Start command (optional):", startCmdField)
+        .addLabeledComponent("Stop command (optional):", stopCmdField)
+        .addLabeledComponent("Working dir (optional):", workingDirField)
+        .addLabeledComponent("Env file (optional):", envFileField)
         .panel
 
     override fun getPreferredFocusedComponent(): JComponent = nameField
@@ -131,6 +144,10 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         app.memAlertMb = memAlertField.text.trim().toIntOrNull() ?: 0
         app.tag = tagField.text.trim()
         app.colorRgb = colorPanel.selectedColor?.let { it.rgb and 0xFFFFFF } ?: 0
+        app.startCmd = startCmdField.text.trim()
+        app.stopCmd = stopCmdField.text.trim()
+        app.workingDir = workingDirField.text.trim()
+        app.envFile = envFileField.text.trim()
         return app
     }
 

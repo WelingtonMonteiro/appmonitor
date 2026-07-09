@@ -23,12 +23,14 @@ import io.github.welingtonmonteiro.appmonitor.AlertArm
 import io.github.welingtonmonteiro.appmonitor.AppRowFilter
 import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
+import io.github.welingtonmonteiro.appmonitor.AppCommandRunner
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
 import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
 import io.github.welingtonmonteiro.appmonitor.AppSample
 import io.github.welingtonmonteiro.appmonitor.DiscoveryScanner
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
+import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
 import io.github.welingtonmonteiro.appmonitor.model.TargetKind
 import io.github.welingtonmonteiro.appmonitor.state.MonitoredAppsState
 import java.awt.BorderLayout
@@ -138,12 +140,36 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             add(object : DumbAwareAction("Kill Process on Port", "Kill whatever process listens on a TCP port", AllIcons.Actions.Cancel) {
                 override fun actionPerformed(e: AnActionEvent) = killByPort()
             })
-            add(object : DumbAwareAction("Force Kill", "Force-kill the process tree of the selected running app(s)", AllIcons.Actions.Suspend) {
+            add(object : DumbAwareAction("Force Kill", "Force-kill the process tree of the selected running app(s)", AllIcons.Debugger.KillProcess) {
                 override fun getActionUpdateThread() = ActionUpdateThread.EDT
                 override fun update(e: AnActionEvent) {
                     e.presentation.isEnabled = selectedSamples().any { it.up }
                 }
                 override fun actionPerformed(e: AnActionEvent) = forceKillSelected()
+            })
+            addSeparator()
+            add(object : DumbAwareAction("Start", "Run the selected app's start command", AllIcons.Actions.Execute) {
+                override fun getActionUpdateThread() = ActionUpdateThread.EDT
+                override fun update(e: AnActionEvent) {
+                    e.presentation.isEnabled = selectedApp()?.startCmd?.isNotBlank() == true
+                }
+                override fun actionPerformed(e: AnActionEvent) = startSelected()
+            })
+            add(object : DumbAwareAction("Stop", "Run the selected app's stop command (or kill its tree)", AllIcons.Actions.Suspend) {
+                override fun getActionUpdateThread() = ActionUpdateThread.EDT
+                override fun update(e: AnActionEvent) {
+                    val app = selectedApp()
+                    e.presentation.isEnabled = app != null &&
+                        (app.stopCmd.isNotBlank() || selectedSamples().singleOrNull()?.up == true)
+                }
+                override fun actionPerformed(e: AnActionEvent) = stopSelected()
+            })
+            add(object : DumbAwareAction("Restart", "Stop then start the selected app (needs a start command)", AllIcons.Actions.Restart) {
+                override fun getActionUpdateThread() = ActionUpdateThread.EDT
+                override fun update(e: AnActionEvent) {
+                    e.presentation.isEnabled = selectedApp()?.startCmd?.isNotBlank() == true
+                }
+                override fun actionPerformed(e: AnActionEvent) = restartSelected()
             })
             addSeparator()
             add(object : DumbAwareAction("Show/Hide Columns", "Choose which columns are visible (persisted)", AllIcons.General.Settings) {
@@ -239,6 +265,39 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         if (proceed != Messages.YES) return
         ApplicationManager.getApplication().executeOnPooledThread {
             pids.forEach { killTree(it) }
+            refreshNow()
+        }
+    }
+
+    private fun selectedApp(): MonitoredApp? = selectedSamples().singleOrNull()?.let { state.findById(it.appId) }
+
+    private fun startSelected() {
+        val app = selectedApp() ?: return
+        if (app.startCmd.isBlank()) return
+        ApplicationManager.getApplication().executeOnPooledThread {
+            AppCommandRunner.start(app, project.basePath)
+            refreshNow()
+        }
+    }
+
+    private fun stopSelected() {
+        val sample = selectedSamples().singleOrNull() ?: return
+        val app = state.findById(sample.appId) ?: return
+        ApplicationManager.getApplication().executeOnPooledThread {
+            // stop command if configured; otherwise fall back to killing the running tree
+            if (!AppCommandRunner.stop(app, project.basePath) && sample.up) killTree(sample.rootPid)
+            refreshNow()
+        }
+    }
+
+    private fun restartSelected() {
+        val sample = selectedSamples().singleOrNull() ?: return
+        val app = state.findById(sample.appId) ?: return
+        if (app.startCmd.isBlank()) return
+        ApplicationManager.getApplication().executeOnPooledThread {
+            if (!AppCommandRunner.stop(app, project.basePath) && sample.up) killTree(sample.rootPid)
+            Thread.sleep(RESTART_STOP_WAIT_MS)
+            AppCommandRunner.start(app, project.basePath)
             refreshNow()
         }
     }
@@ -428,5 +487,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     companion object {
         private const val REFRESH_MS = 2000
+        /** Pause between stop and start on a Restart, so the port is freed before the app relaunches. */
+        private const val RESTART_STOP_WAIT_MS = 800L
     }
 }
