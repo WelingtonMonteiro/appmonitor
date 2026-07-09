@@ -2,6 +2,9 @@ package io.github.welingtonmonteiro.appmonitor
 
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
 
+/** Result of an app's health check: none configured, or the outcome of the HTTP probe. */
+enum class Health { NONE, HEALTHY, UNHEALTHY }
+
 /**
  * One row of the monitor at one refresh: the live measurement of a [MonitoredApp]. Numeric and
  * IDE-free (formatting happens in the table model); {@code -1} / empty means "not available".
@@ -23,6 +26,10 @@ data class AppSample(
     val memPercent: Double,
     /** Instantaneous CPU percentage of the tree, or -1 before the first delta is known. */
     val cpuPercent: Double,
+    /** Recent RSS values (KB), oldest→newest, for the Mem-trend sparkline; empty when down. */
+    val memTrendKb: List<Long> = emptyList(),
+    /** HTTP health outcome when a health URL is configured; [Health.NONE] otherwise. */
+    val health: Health = Health.NONE,
 ) {
     companion object {
         /** A down row: the app exists in the list but its target was not found this refresh. */

@@ -1,6 +1,7 @@
 package io.github.welingtonmonteiro.appmonitor.ui
 
 import io.github.welingtonmonteiro.appmonitor.AppSample
+import io.github.welingtonmonteiro.appmonitor.Health
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import java.util.Locale
 import javax.swing.table.AbstractTableModel
@@ -21,6 +22,7 @@ class AppTableModel : AbstractTableModel() {
         MEM("Mem"),
         MEM_PCT("Mem %"),
         CPU_PCT("CPU %"),
+        MEM_TREND("Mem trend"),
     }
 
     private val columns = Column.entries.toTypedArray()
@@ -55,10 +57,17 @@ class AppTableModel : AbstractTableModel() {
             }
             Column.PID -> if (s.up) s.rootPid.toString() else "—"
             Column.UPTIME -> if (s.up) ProcessStatsSampler.formatUptime(s.uptimeMs) else "—"
-            Column.STATUS -> if (s.up) "up" else "down"
+            Column.STATUS -> when {
+                !s.up -> "down"
+                s.health == Health.HEALTHY -> "healthy"
+                s.health == Health.UNHEALTHY -> "unhealthy"
+                else -> "up"
+            }
             Column.MEM -> if (s.up) ProcessStatsSampler.formatMemory(s.rssKb) else "—"
             Column.MEM_PCT -> if (s.memPercent < 0) "—" else String.format(Locale.US, "%.1f%%", s.memPercent)
             Column.CPU_PCT -> if (s.cpuPercent < 0) "—" else String.format(Locale.US, "%.2f%%", s.cpuPercent)
+            // the sparkline renderer reads the trend off the sample itself
+            Column.MEM_TREND -> s
         }
     }
 }

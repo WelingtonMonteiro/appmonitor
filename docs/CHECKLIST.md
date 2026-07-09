@@ -34,13 +34,13 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] 🔧 **Windows desde o dia 1** (netstat/PowerShell) — dívida que o MR deixou para trás.
 - [x] 🔧 **Testes de lógica pura** (parsing netstat/lsof, resolução de alvo, round-trip de persistência). 36 testes.
 
-## Fase 1 — Observabilidade rica
+## Fase 1 — Observabilidade rica — 🚧 parcial (v0.2.0)
 
-- [ ] 🔁 **Sparkline de tendência de memória** por app.
-- [ ] 🔁 **Gráfico de sessão completa** (eixos X/Y, pico) + **análise de memory-leak**
-      (slope KB/min, R², fração monótona, veredito) + **export** (.txt/.csv).
+- [x] 🔁 **Sparkline de tendência de memória** por app. (v0.2.0)
+- [x] 🔁 **Gráfico de sessão completa** (eixos X/Y, pico) + **análise de memory-leak**
+      (slope KB/min, R², fração monótona, veredito) + **export** (.txt/.csv). (v0.2.0)
 - [ ] 🔁 **Breakdown por processo** da árvore (PID/comando/memória/% da árvore).
-- [ ] 🆕 **Health check HTTP** por app (2xx/3xx = healthy), além do check de porta.
+- [x] 🆕 **Health check HTTP** por app (2xx/3xx = healthy), além do check de porta. (v0.2.0)
 - [ ] 🆕 **Alertas + notificações**: app caiu, mem/CPU acima do limite, leak, porta liberou/ocupou.
 - [ ] 🔁 **Seletor de colunas** (mostrar/ocultar) — **persistido** (o MR não persistia).
 
@@ -73,8 +73,8 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 | Classe (MR) | Fase | Copiada | Windows | → Kotlin | Observação |
 |---|---|:--:|:--:|:--:|---|
 | `ProcessStatsSampler` | 0 | [x] | [x] | [ ] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Camada Windows (netstat/PowerShell) adicionada. Fica em Java por ora. |
-| `MemoryHistory` (+ `Analysis`) | 1 | [ ] | n/a | [ ] | histórico + análise de leak (slope/R²/monótono). IDE-free. |
-| `MemoryChartDialog` | 1 | [ ] | n/a | [ ] | gráfico + análise + breakdown + export. Tirar deps do MR. |
+| `MemoryHistory` (+ `Analysis`) | 1 | [x] | n/a | [x] | histórico + análise de leak (slope/R²/monótono). **Escrito direto em Kotlin.** |
+| `MemoryChartDialog` | 1 | [x] | n/a | [x] | gráfico de sessão + análise + export. **Reescrito em Kotlin** (`MemoryChartDialog.kt`), sem deps do MR. Breakdown por processo fica p/ depois. |
 | Renderers de tabela (sparkline/ports/status) | 0–1 | [ ] | n/a | [ ] | reaproveitáveis do `MultirunMonitorPanel`. |
 
 **Não vem do MR** (dependem de `RunContentManager`/`ProcessHandler`/orquestração do grupo):

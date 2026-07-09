@@ -54,9 +54,16 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             "Add one by port  (＋)", com.intellij.ui.SimpleTextAttributes.LINK_ATTRIBUTES
         ) { addApp() }
         installStatusRenderer()
+        installSparkline()
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (e.clickCount == 2) editSelected()
+                val row = table.rowAtPoint(e.point)
+                if (row < 0) return
+                if (table.columnAtPoint(e.point) == AppTableModel.Column.MEM_TREND.ordinal) {
+                    model.sampleAt(row)?.let { openChart(it) }
+                } else if (e.clickCount == 2) {
+                    editSelected()
+                }
             }
         })
 
@@ -86,6 +93,15 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
                     e.presentation.isEnabled = table.selectedRowCount == 1
                 }
                 override fun actionPerformed(e: AnActionEvent) = editSelected()
+            })
+            add(object : DumbAwareAction("Memory Chart", "Open the full memory chart and leak analysis of the selected app", AllIcons.General.InspectionsEye) {
+                override fun getActionUpdateThread() = ActionUpdateThread.EDT
+                override fun update(e: AnActionEvent) {
+                    e.presentation.isEnabled = selectedSamples().singleOrNull()?.up == true
+                }
+                override fun actionPerformed(e: AnActionEvent) {
+                    selectedSamples().singleOrNull()?.let { openChart(it) }
+                }
             })
             addSeparator()
             add(object : DumbAwareAction("Refresh", "Refresh now", AllIcons.Actions.Refresh) {
@@ -239,6 +255,19 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     // --- rendering -------------------------------------------------------------------------------
 
+    private fun installSparkline() {
+        val column = table.columnModel.getColumn(AppTableModel.Column.MEM_TREND.ordinal)
+        column.cellRenderer = SparklineRenderer()
+        column.preferredWidth = 90
+        column.minWidth = 60
+    }
+
+    private fun openChart(sample: AppSample) {
+        if (!sample.up) return
+        val name = sample.name.ifBlank { sample.targetLabel }
+        MemoryChartDialog(project, name, sampler.history(sample.appId)).show()
+    }
+
     private fun installStatusRenderer() {
         val statusColumn = AppTableModel.Column.STATUS.ordinal
         table.columnModel.getColumn(statusColumn).cellRenderer = object : DefaultTableCellRenderer() {
@@ -247,7 +276,8 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             ): Component {
                 val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
                 if (!isSelected) {
-                    foreground = if (value == "up") JBColor.namedColor("Label.successForeground", JBColor.GREEN)
+                    val healthy = value == "up" || value == "healthy"
+                    foreground = if (healthy) JBColor.namedColor("Label.successForeground", JBColor.GREEN)
                     else JBColor.namedColor("Label.errorForeground", JBColor.RED)
                 }
                 return c
