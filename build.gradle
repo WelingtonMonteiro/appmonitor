@@ -1,14 +1,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    // Kotlin is the primary language; a few reused classes stay in Java for now (src/main/java),
-    // to be converted one-by-one later (IntelliJ: Convert Java File to Kotlin File).
+    // The project is written entirely in Kotlin (the JavaCompile config below is kept as a harmless
+    // guard in case a Java file is ever added, so it would still cross-compile to Java 17 bytecode).
     id "org.jetbrains.kotlin.jvm" version "2.2.20"
     id "org.jetbrains.intellij.platform" version "2.17.0"
 }
 
 group = 'io.github.welingtonmonteiro'
-version = '0.13.0'
+version = '0.13.1'
 
 repositories {
     mavenCentral()
