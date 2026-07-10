@@ -25,6 +25,7 @@ import io.github.welingtonmonteiro.appmonitor.AppRowFilter
 import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppCommandRunner
+import io.github.welingtonmonteiro.appmonitor.AppEvents
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSettings
 import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
@@ -76,6 +77,9 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     /** The full (unfiltered) rows from the last refresh, and the current toolbar filter query. */
     private var lastRows: List<AppSample> = emptyList()
     private var filterQuery: String = ""
+
+    /** appId -> the previous refresh's sample, to detect up/down/restart/health transitions for events. */
+    private var prevSampleById: Map<String, AppSample> = emptyMap()
 
     @Volatile
     private var disposed = false
@@ -411,7 +415,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         val selectedIds = selectedSamples().map { it.appId }.toSet()
         model.setRows(AppRowFilter.filter(rows, filterQuery))
         restoreSelection(selectedIds)
-        evaluateAlerts(rows)       // alerts and the status widget consider every app, not just the filtered ones
+        evaluateAlertsAndEvents(rows) // alerts, events and the status widget consider every app, not just the filtered ones
         updateStatusWidget(rows)
     }
 
@@ -434,18 +438,29 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         WindowManager.getInstance().getStatusBar(project)?.updateWidget(AppMonitorStatusBarWidget.ID)
     }
 
-    /** Raise a balloon for each app whose down/memory/CPU/leak condition just became true. */
-    private fun evaluateAlerts(rows: List<AppSample>) {
-        if (!AppMonitorSettings.getInstance().notificationsEnabled) return
+    /**
+     * Records each app's events (up/down/restart/health transitions + fired alerts) for the dashboard
+     * and raises a balloon for each just-true down/memory/CPU/leak condition. Events are logged even
+     * when notifications are off; only the balloons are gated by the setting.
+     */
+    private fun evaluateAlertsAndEvents(rows: List<AppSample>) {
+        val notify = AppMonitorSettings.getInstance().notificationsEnabled
         val appsById = state.apps().associateBy { it.id }
+        val now = System.currentTimeMillis()
         for (sample in rows) {
-            val app = appsById[sample.appId] ?: continue
-            val leaking = MemoryHistory.analyze(sampler.history(sample.appId)).isSteadyLeak()
-            val (alerts, arm) = AlertPolicy.evaluate(app, sample, leaking, alertArms[sample.appId] ?: AlertArm())
-            alertArms[sample.appId] = arm
-            alerts.forEach { AlertNotifier.notify(project, it) }
+            val events = ArrayList(AppEvents.lifecycle(prevSampleById[sample.appId], sample, now))
+            val app = appsById[sample.appId]
+            if (app != null) {
+                val leaking = MemoryHistory.analyze(sampler.history(sample.appId)).isSteadyLeak()
+                val (alerts, arm) = AlertPolicy.evaluate(app, sample, leaking, alertArms[sample.appId] ?: AlertArm())
+                alertArms[sample.appId] = arm
+                if (notify) alerts.forEach { AlertNotifier.notify(project, it) }
+                events.addAll(AppEvents.fromAlerts(alerts, now))
+            }
+            sampler.recordEvents(sample.appId, events)
         }
         alertArms.keys.retainAll(rows.mapTo(HashSet()) { it.appId })
+        prevSampleById = rows.associateBy { it.appId }
     }
 
     private fun selectedSamples(): List<AppSample> =
@@ -458,7 +473,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         val name = sample.name.ifBlank { sample.targetLabel }
         MemoryChartDialog(
             project, name, sampler.history(sample.appId), sampler.breakdown(sample.appId),
-            sampler.previousHistory(sample.appId)
+            sampler.previousHistory(sample.appId), sampler.events(sample.appId)
         ).show()
     }
 

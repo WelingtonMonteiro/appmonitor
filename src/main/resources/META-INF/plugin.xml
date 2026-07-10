@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.12.0</strong> (per-app dashboard: events):</p>
+        <ul>
+            <li>New: the memory dialog gained an <b>Events</b> tab - a per-app timeline of
+                <b>started / stopped / restarted</b>, <b>healthy / unhealthy</b> and
+                <b>memory / CPU / leak</b> alerts, each timestamped. Events are recorded even when
+                notifications are turned off.</li>
+        </ul>
         <p><strong>0.11.0</strong> (persistent history):</p>
         <ul>
             <li>New: each app's <b>memory session is saved to disk</b>, so the chart and leak analysis

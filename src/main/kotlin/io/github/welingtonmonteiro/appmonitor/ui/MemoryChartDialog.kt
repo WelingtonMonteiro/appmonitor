@@ -11,6 +11,8 @@ import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.table.JBTable
+import io.github.welingtonmonteiro.appmonitor.AppEvent
+import io.github.welingtonmonteiro.appmonitor.AppEventKind
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcRow
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
@@ -23,6 +25,9 @@ import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.io.IOException
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.swing.Action
 import javax.swing.JButton
@@ -42,6 +47,8 @@ class MemoryChartDialog(
     private val breakdown: List<ProcRow> = emptyList(),
     /** The last finished session, drawn faintly for comparison; empty when there is none. */
     private val previousSamples: List<MemoryHistory.Sample> = emptyList(),
+    /** The app's recorded lifecycle/alert events, for the Events tab. */
+    private val events: List<AppEvent> = emptyList(),
 ) : DialogWrapper(project) {
 
     init {
@@ -64,6 +71,7 @@ class MemoryChartDialog(
         val tabs = JBTabbedPane()
         tabs.addTab("Chart", chartTab())
         tabs.addTab("Processes (${breakdown.size})", ScrollPaneFactory.createScrollPane(JBTable(ProcTableModel(breakdown))))
+        tabs.addTab("Events (${events.size})", ScrollPaneFactory.createScrollPane(JBTable(EventTableModel(events))))
         root.add(tabs, BorderLayout.CENTER)
         return root
     }
@@ -110,6 +118,36 @@ class MemoryChartDialog(
                 2 -> ProcessStatsSampler.formatMemory(row.rssKb)
                 else -> String.format(Locale.US, "%.1f%%", row.pctOfTree)
             }
+        }
+    }
+
+    /** The app's event log, newest first: when it happened, what happened and a short detail. */
+    private class EventTableModel(events: List<AppEvent>) : AbstractTableModel() {
+        private val rows = events.asReversed()
+        private val cols = arrayOf("Time", "Event", "Detail")
+        private val fmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
+        override fun getRowCount(): Int = rows.size
+        override fun getColumnCount(): Int = cols.size
+        override fun getColumnName(column: Int): String = cols[column]
+        override fun isCellEditable(rowIndex: Int, columnIndex: Int): Boolean = false
+        override fun getValueAt(rowIndex: Int, columnIndex: Int): Any {
+            val row = rows[rowIndex]
+            return when (columnIndex) {
+                0 -> fmt.format(Instant.ofEpochMilli(row.timeMs))
+                1 -> label(row.kind)
+                else -> row.detail
+            }
+        }
+
+        private fun label(kind: AppEventKind): String = when (kind) {
+            AppEventKind.STARTED -> "Started"
+            AppEventKind.STOPPED -> "Stopped"
+            AppEventKind.RESTARTED -> "Restarted"
+            AppEventKind.HEALTHY -> "Healthy"
+            AppEventKind.UNHEALTHY -> "Unhealthy"
+            AppEventKind.MEMORY_ALERT -> "Memory alert"
+            AppEventKind.CPU_ALERT -> "CPU alert"
+            AppEventKind.LEAK -> "Leak"
         }
     }
 
