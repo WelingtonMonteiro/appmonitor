@@ -53,16 +53,16 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [ ] 🆕 **Env viewer** para apps com env conhecido (`.env` informado ou ponte com run config).
 - [ ] 🆕 **Múltiplos alvos por app** (2 portas; ou nome + porta).
 
-## Fase 3 — Mini gerenciador (opcional) — 🚧 parcial (v0.6.0)
+## Fase 3 — Mini gerenciador (opcional) — 🚧 parcial (v0.6.0–v0.7.0)
 
 - [x] 🆕 **Start / Stop / Restart via comando do usuário** por app (working dir + comando + `.env`). (v0.6.0)
 - [ ] 🆕 **Docker-aware**: `docker stats`/CLI (nome do container como alvo).
-- [ ] 🆕 **Página de Settings**: intervalos, limites padrão, cores, comportamento de alerta.
+- [x] 🆕 **Página de Settings**: intervalo de refresh + toggle de notificações. (v0.7.0)
+      _(limites padrão / cores / comportamento de alerta ficam p/ depois)_
 - [ ] 🆕 **Ponte com o Multiple Run**: importar apps que o MR lançou.
 
 ## Fase 4 — Alcance (stretch)
 
-- [ ] 🆕 **Monitor remoto via SSH** (portas/stats de outra máquina).
 - [ ] 🆕 **Histórico persistente** entre sessões + comparação.
 - [ ] 🆕 **Mini-dashboard por app** (aba dedicada com gráficos e eventos).
 - [ ] 🆕 **Regras de ação** ("se app X cair, rode Y" / "se mem > 90% por 5 min, notifique/mata").

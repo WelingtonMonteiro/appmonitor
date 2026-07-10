@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'io.github.welingtonmonteiro'
-version = '0.6.0'
+version = '0.7.0'
 
 repositories {
     mavenCentral()
@@ -68,7 +68,8 @@ intellijPlatform {
         }
     }
 
-    // No Settings pages yet - nothing to index, and the headless run is flaky (lesson from MR).
+    // Kept off deliberately: the searchable-options indexer launches a headless IDE that was flaky
+    // (lesson from Multiple Run). The App Monitor settings page still works, it just isn't pre-indexed.
     buildSearchableOptions = false
 
     // JetBrains Plugin Verifier against the same IDE matrix the Marketplace runs.

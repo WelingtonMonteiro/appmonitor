@@ -6,8 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Next: docker stats as a target, a settings page, and the Multiple Run bridge (Fase 3), plus the
-  leftover Fase 2 bits (env viewer, multiple targets per app). See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Next: docker stats as a target and the Multiple Run bridge (Fase 3), plus the leftover Fase 2 bits
+  (env viewer, multiple targets per app). See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.7.0] - 2026-07-09
+
+**Fase 3 (part 2) — settings page.**
+
+### Added
+- **Settings page** (Settings → Tools → App Monitor): configure the **refresh interval** (1–60s) and
+  toggle **alert notifications**. Changes take effect on the next refresh, no restart needed.
 
 ## [0.6.0] - 2026-07-09
 
@@ -99,7 +107,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.3.0...v0.4.0

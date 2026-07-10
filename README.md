@@ -5,9 +5,8 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.6.0** (start / stop / restart apps by command). See the
-[CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
-what comes next.
+**Status:** actively developed — **v0.7.0** (settings page). See the [CHANGELOG](CHANGELOG.md) for
+what changed in each version and the [ROADMAP](docs/ROADMAP.md) for what comes next.
 
 Compatible with IntelliJ IDEA, WebStorm, PyCharm, PhpStorm and other IntelliJ-based IDEs **2023.3+**.
 
@@ -44,6 +43,7 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 - **Per-process breakdown** — the memory chart's **Processes** tab lists every PID of the tree with
   its command, memory and share of the tree.
 - **Show/hide columns** from the toolbar, **persisted per project**.
+- **Settings page** (Settings → Tools → App Monitor) — refresh interval and alert-notification toggle.
 - **Kill Process on Port** — kill whatever process (and its entire tree) is listening on a port, plus
   **Force Kill** of a selected running app's process tree. Goodbye `EADDRINUSE`.
 - **Per-project persistence** — the list of monitored apps is saved per project and survives IDE

@@ -31,6 +31,11 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.7.0</strong> (settings page):</p>
+        <ul>
+            <li>New: <b>Settings → Tools → App Monitor</b> - set the <b>refresh interval</b> and toggle
+                <b>alert notifications</b>. Applies without restarting the IDE.</li>
+        </ul>
         <p><strong>0.6.0</strong> (start / stop / restart):</p>
         <ul>
             <li>New: give an app a <b>start command</b> (and optional stop command, working directory
@@ -94,6 +99,11 @@
         <statusBarWidgetFactory id="AppMonitor.StatusBarWidget"
                                 implementation="io.github.welingtonmonteiro.appmonitor.ui.AppMonitorStatusBarWidgetFactory"
                                 order="last"/>
+        <!-- settings page: Settings -> Tools -> App Monitor -->
+        <applicationConfigurable parentId="tools"
+                                 id="io.github.welingtonmonteiro.appmonitor.settings"
+                                 displayName="App Monitor"
+                                 instance="io.github.welingtonmonteiro.appmonitor.ui.AppMonitorConfigurable"/>
         <!-- balloon notifications (app down, memory/CPU alerts) -->
         <notificationGroup id="App Monitor" displayType="BALLOON"/>
     </extensions>

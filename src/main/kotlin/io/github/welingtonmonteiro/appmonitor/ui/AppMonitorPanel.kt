@@ -25,6 +25,7 @@ import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppCommandRunner
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
+import io.github.welingtonmonteiro.appmonitor.AppMonitorSettings
 import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
 import io.github.welingtonmonteiro.appmonitor.AppSample
 import io.github.welingtonmonteiro.appmonitor.DiscoveryScanner
@@ -362,7 +363,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
         ApplicationManager.getApplication().invokeLater({
             if (!disposed) applyRows(rows)
         }, ModalityState.any())
-        scheduleNext(REFRESH_MS)
+        scheduleNext(AppMonitorSettings.getInstance().refreshIntervalMs())
     }
 
     private fun applyRows(rows: List<AppSample>) {
@@ -395,6 +396,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     /** Raise a balloon for each app whose down/memory/CPU/leak condition just became true. */
     private fun evaluateAlerts(rows: List<AppSample>) {
+        if (!AppMonitorSettings.getInstance().notificationsEnabled) return
         val appsById = state.apps().associateBy { it.id }
         for (sample in rows) {
             val app = appsById[sample.appId] ?: continue
@@ -486,7 +488,6 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     }
 
     companion object {
-        private const val REFRESH_MS = 2000
         /** Pause between stop and start on a Restart, so the port is freed before the app relaunches. */
         private const val RESTART_STOP_WAIT_MS = 800L
     }
