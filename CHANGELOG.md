@@ -6,8 +6,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Next: the Multiple Run bridge (Fase 3) and the leftover Fase 2 bits (env viewer, multiple targets
-  per app). See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Next: the leftover Fase 2 bits — env viewer and multiple targets per app. See
+  [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## [0.8.0] - 2026-07-09
 

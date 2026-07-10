@@ -50,16 +50,15 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] 🆕 **Grupos / tags** (backend, frontend, infra) com cor + **filtro** por nome/tag/porta. (v0.5.0)
       _(agregados por grupo / agrupamento colapsável ficam p/ depois)_
 - [x] 🆕 **Widget na status bar**: "▲up ▼down" + mem total no tooltip; clica e abre o painel. (v0.4.0)
-- [ ] 🆕 **Env viewer** para apps com env conhecido (`.env` informado ou ponte com run config).
+- [ ] 🆕 **Env viewer** para apps com env conhecido (`.env` informado).
 - [ ] 🆕 **Múltiplos alvos por app** (2 portas; ou nome + porta).
 
-## Fase 3 — Mini gerenciador (opcional) — 🚧 parcial (v0.6.0–v0.7.0)
+## Fase 3 — Mini gerenciador (opcional) — ✅ completa (v0.6.0–v0.8.0)
 
 - [x] 🆕 **Start / Stop / Restart via comando do usuário** por app (working dir + comando + `.env`). (v0.6.0)
 - [x] 🆕 **Docker-aware**: `docker stats`/`inspect`/`port` (nome do container como alvo). (v0.8.0)
 - [x] 🆕 **Página de Settings**: intervalo de refresh + toggle de notificações. (v0.7.0)
       _(limites padrão / cores / comportamento de alerta ficam p/ depois)_
-- [ ] 🆕 **Ponte com o Multiple Run**: importar apps que o MR lançou.
 
 ## Fase 4 — Alcance (stretch)
 
