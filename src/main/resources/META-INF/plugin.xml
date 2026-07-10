@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.10.0</strong> (multiple targets per app):</p>
+        <ul>
+            <li>New: an app can now aggregate <b>several targets</b> in one row. Add <b>Extra ports</b>
+                (comma-separated) in the Add/Edit dialog to fold an app that listens on more than one
+                port - or a <b>process-name target plus a port</b> - into a single measurement
+                (memory, CPU and ports are summed over the union of the process trees).</li>
+        </ul>
         <p><strong>0.9.0</strong> (env viewer):</p>
         <ul>
             <li>New: <b>Env Viewer</b> - for an app with a <code>.env</code> file configured, a toolbar

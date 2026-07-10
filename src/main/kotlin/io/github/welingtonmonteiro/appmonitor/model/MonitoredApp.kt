@@ -47,6 +47,12 @@ class MonitoredApp {
     var pid: Long = 0
     /** Used when [targetKind] is [TargetKind.DOCKER]: the container name or id. */
     var containerName: String = ""
+    /**
+     * Extra TCP ports folded into this app's measurement, comma-separated (e.g. `"9090, 4000"`).
+     * Lets one row aggregate an app that listens on several ports, or a process-name target plus a
+     * port. Ignored for [TargetKind.DOCKER]. Stored as a string so it round-trips trivially.
+     */
+    var extraPorts: String = ""
 
     // --- optional, for later phases ---
     var healthUrl: String = ""
@@ -62,7 +68,7 @@ class MonitoredApp {
     /** Packed 0xRRGGBB, or 0 for "no color". */
     var colorRgb: Int = 0
 
-    /** The strongly-typed target derived from the persisted fields. */
+    /** The strongly-typed **primary** target derived from the persisted fields. */
     fun toTarget(): Target = when (targetKind) {
         TargetKind.PORT -> Target.Port(port)
         TargetKind.PROCESS_NAME -> Target.ProcessName(processNameRegex)
@@ -70,12 +76,31 @@ class MonitoredApp {
         TargetKind.DOCKER -> Target.Docker(containerName)
     }
 
-    /** Short human description of the target (for the tooltip / secondary text). */
-    fun targetLabel(): String = when (targetKind) {
-        TargetKind.PORT -> "port $port"
-        TargetKind.PROCESS_NAME -> "name ~ /$processNameRegex/"
-        TargetKind.PID -> "pid $pid"
-        TargetKind.DOCKER -> "docker $containerName"
+    /** The extra ports (parsed, valid, de-duplicated, minus the primary port when it is a port target). */
+    fun extraPortList(): List<Int> {
+        val extras = parsePorts(extraPorts)
+        return if (targetKind == TargetKind.PORT) extras.filterNot { it == port } else extras
+    }
+
+    /**
+     * Every target that defines this app: the primary one plus a [Target.Port] for each extra port.
+     * A docker app never aggregates host ports, so it keeps just its primary target.
+     */
+    fun allTargets(): List<Target> {
+        if (targetKind == TargetKind.DOCKER) return listOf(toTarget())
+        return listOf(toTarget()) + extraPortList().map { Target.Port(it) }
+    }
+
+    /** Short human description of the target(s) (for the tooltip / secondary text). */
+    fun targetLabel(): String {
+        val base = when (targetKind) {
+            TargetKind.PORT -> "port $port"
+            TargetKind.PROCESS_NAME -> "name ~ /$processNameRegex/"
+            TargetKind.PID -> "pid $pid"
+            TargetKind.DOCKER -> "docker $containerName"
+        }
+        val extras = if (targetKind == TargetKind.DOCKER) emptyList() else extraPortList()
+        return if (extras.isEmpty()) base else "$base + " + extras.joinToString(", ") { "port $it" }
     }
 
     companion object {
@@ -85,5 +110,12 @@ class MonitoredApp {
             this.targetKind = TargetKind.PORT
             this.port = port
         }
+
+        /** Parse a comma/space-separated port list into valid, de-duplicated port numbers (pure). */
+        fun parsePorts(text: String): List<Int> =
+            text.split(',', ' ', '\t', ';')
+                .mapNotNull { it.trim().toIntOrNull() }
+                .filter { it in 1..65535 }
+                .distinct()
     }
 }
