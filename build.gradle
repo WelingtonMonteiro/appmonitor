@@ -1,8 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    // The project is written entirely in Kotlin (the JavaCompile config below is kept as a harmless
-    // guard in case a Java file is ever added, so it would still cross-compile to Java 17 bytecode).
+    // The project is written entirely in Kotlin.
     id "org.jetbrains.kotlin.jvm" version "2.2.20"
     id "org.jetbrains.intellij.platform" version "2.17.0"
 }
@@ -29,16 +28,19 @@ dependencies {
     }
 }
 
-// Compile with the locally installed JBR 21 (see org.gradle.java.installations.paths in
+// Build with the locally installed JBR 21 (see org.gradle.java.installations.paths in
 // gradle.properties) but cross-compile to Java 17 bytecode, so the plugin stays loadable on the
-// 2023.3 runtime (JBR 17) - which is also the JVM the plugin tests run on. The target is forced per
-// task (release / jvmTarget) because the 21 toolchain otherwise drags every output up to 21.
+// 2023.3 runtime (JBR 17) - which is also the JVM the plugin tests run on.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
+// The code is 100% Kotlin, but the (source-less) Java compile tasks still default to the 21 toolchain.
+// The Kotlin plugin requires the Java and Kotlin compile tasks of a source set to share a JVM target,
+// so pin the Java tasks to 17 to match Kotlin's jvmTarget below - without this the build fails with an
+// "Inconsistent JVM-target compatibility" error. (Required even though there are no .java files.)
 tasks.withType(JavaCompile).configureEach {
     options.release.set(17)
 }
