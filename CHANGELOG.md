@@ -6,7 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Next: multiple targets per app — the last Fase 2 bit. See [docs/ROADMAP.md](docs/ROADMAP.md).
+- **Fase 2 is complete.** Next up is Fase 4 (stretch): persistent history across sessions, a
+  per-app dashboard, and action rules. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.10.0] - 2026-07-10
+
+**Fase 2 (part 4) — multiple targets per app.**
+
+### Added
+- **Multiple targets per app**: an app can aggregate more than one target into a single row. Set
+  **Extra ports** (comma-separated) in the Add/Edit dialog to watch an app that listens on several
+  ports, or a **process-name target plus a port**. Each target is resolved every refresh and the
+  process trees are **unioned**, so memory, CPU, uptime and listening ports are measured over all of
+  them at once. Ignored for docker targets.
 
 ## [0.9.0] - 2026-07-10
 
@@ -125,7 +137,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.6.0...v0.7.0

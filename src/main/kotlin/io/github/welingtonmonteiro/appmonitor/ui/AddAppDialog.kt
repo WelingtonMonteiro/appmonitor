@@ -26,6 +26,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     private val kindCombo = ComboBox(arrayOf("Port", "Process name", "PID", "Docker container"))
     private val valueLabel = JBLabel("Port:")
     private val valueField = JBTextField(24)
+    private val extraPortsField = JBTextField(24)
     private val healthField = JBTextField(24)
     private val memAlertField = JBTextField(8)
     private val tagField = JBTextField(16)
@@ -38,6 +39,8 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     init {
         title = if (existing == null) "Add App" else "Edit App"
         kindCombo.addActionListener { valueLabel.text = valueLabelFor(kindCombo.selectedIndex) }
+        extraPortsField.toolTipText =
+            "Comma-separated TCP ports to fold into this app (e.g. 9090, 4000). Ignored for docker."
         prefill()
         init()
     }
@@ -58,6 +61,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
             TargetKind.PID -> if (app.pid > 0) app.pid.toString() else ""
             TargetKind.DOCKER -> app.containerName
         }
+        extraPortsField.text = app.extraPorts
         healthField.text = app.healthUrl
         memAlertField.text = if (app.memAlertMb > 0) app.memAlertMb.toString() else ""
         tagField.text = app.tag
@@ -72,6 +76,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         .addLabeledComponent("Name:", nameField)
         .addLabeledComponent("Target:", kindCombo)
         .addLabeledComponent(valueLabel, valueField)
+        .addLabeledComponent("Extra ports (optional):", extraPortsField)
         .addSeparator()
         .addLabeledComponent("Health URL (optional):", healthField)
         .addLabeledComponent("Memory alert MB (optional):", memAlertField)
@@ -120,6 +125,14 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
                 }
             }
         }
+        val extra = extraPortsField.text.trim()
+        if (extra.isNotEmpty()) {
+            val bad = extra.split(',', ' ', '\t', ';').map { it.trim() }.filter { it.isNotEmpty() }
+                .firstOrNull { val p = it.toIntOrNull(); p == null || p !in 1..65535 }
+            if (bad != null) {
+                return ValidationInfo("'$bad' is not a valid port (1-65535).", extraPortsField)
+            }
+        }
         val memText = memAlertField.text.trim()
         if (memText.isNotEmpty() && (memText.toIntOrNull() == null || memText.toInt() < 0)) {
             return ValidationInfo("Memory alert must be a non-negative number of MB.", memAlertField)
@@ -151,6 +164,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
                 app.processNameRegex = value
             }
         }
+        app.extraPorts = extraPortsField.text.trim()
         app.healthUrl = healthField.text.trim()
         app.memAlertMb = memAlertField.text.trim().toIntOrNull() ?: 0
         app.tag = tagField.text.trim()

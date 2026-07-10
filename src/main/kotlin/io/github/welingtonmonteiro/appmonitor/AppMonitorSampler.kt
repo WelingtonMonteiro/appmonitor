@@ -34,15 +34,18 @@ class AppMonitorSampler {
         val now = System.currentTimeMillis()
         val elapsedMs = if (lastSampleMs == 0L) 0L else now - lastSampleMs
 
-        // 1. resolve each target to a root pid, then collect the whole tree of every resolved app
+        // 1. resolve every target of each app (primary + extra ports) to root pids, then collect and
+        //    union the whole process tree of each resolved root - so one row aggregates all of them
         val treePidsByApp = HashMap<String, Set<Long>>()
         val rootPidByApp = HashMap<String, Long>()
         val allPids = LinkedHashSet<Long>()
         for (app in apps) {
-            val rootPid = TargetResolver.resolve(app.toTarget())
-            if (rootPid != null) {
-                val tree = ProcessStatsSampler.processTreePids(rootPid)
-                rootPidByApp[app.id] = rootPid
+            val roots = TargetResolver.resolveAll(app.allTargets())
+            if (roots.isNotEmpty()) {
+                val tree = LinkedHashSet<Long>()
+                for (root in roots) tree.addAll(ProcessStatsSampler.processTreePids(root))
+                // the lowest root is the display PID and the session key (stable across a refresh)
+                rootPidByApp[app.id] = roots.min()
                 treePidsByApp[app.id] = tree
                 allPids.addAll(tree)
             }

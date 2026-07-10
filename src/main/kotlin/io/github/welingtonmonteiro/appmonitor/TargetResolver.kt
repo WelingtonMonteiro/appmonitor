@@ -19,6 +19,10 @@ object TargetResolver {
         is Target.Docker -> null
     }
 
+    /** Resolve every target of an app to its root PID, keeping only the ones found (de-duplicated). */
+    fun resolveAll(targets: List<Target>): List<Long> =
+        targets.mapNotNull { resolve(it) }.distinct()
+
     private fun resolvePort(port: Int): Long? {
         if (port <= 0) return null
         // A port is held by a single LISTEN socket; if several pids report it (forked workers

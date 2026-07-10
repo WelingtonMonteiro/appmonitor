@@ -34,6 +34,56 @@ class AppMonitorModelTest {
         assertTrue("a fresh app gets a non-blank id", app.id.isNotBlank())
     }
 
+    // --- multiple targets per app (primary + extra ports) ------------------------------------
+
+    @Test
+    fun parsePortsKeepsValidDistinctPortsOnly() {
+        assertEquals(listOf(9090, 4000), MonitoredApp.parsePorts("9090, 4000"))
+        assertEquals("tolerates spaces and semicolons", listOf(80, 443), MonitoredApp.parsePorts(" 80 ; 443 "))
+        assertEquals("drops non-numbers, out-of-range and duplicates",
+                     listOf(22), MonitoredApp.parsePorts("abc, 70000, 0, 22, 22"))
+        assertTrue(MonitoredApp.parsePorts("").isEmpty())
+    }
+
+    @Test
+    fun allTargetsFoldsExtraPortsInAndDropsThePrimaryPort() {
+        val portApp = MonitoredApp.ofPort("api", 3000).apply { extraPorts = "3000, 9090, 4000" }
+        assertEquals(
+            listOf(Target.Port(3000), Target.Port(9090), Target.Port(4000)),
+            portApp.allTargets()
+        )
+
+        val nameApp = MonitoredApp().apply {
+            targetKind = TargetKind.PROCESS_NAME; processNameRegex = "node.*api"; extraPorts = "9090"
+        }
+        assertEquals(listOf(Target.ProcessName("node.*api"), Target.Port(9090)), nameApp.allTargets())
+    }
+
+    @Test
+    fun dockerAppNeverAggregatesExtraPorts() {
+        val docker = MonitoredApp().apply {
+            targetKind = TargetKind.DOCKER; containerName = "web"; extraPorts = "9090"
+        }
+        assertEquals(listOf(Target.Docker("web")), docker.allTargets())
+        assertEquals("docker web", docker.targetLabel())
+    }
+
+    @Test
+    fun targetLabelMentionsExtraPorts() {
+        assertEquals("port 3000", MonitoredApp.ofPort("api", 3000).targetLabel())
+        assertEquals(
+            "port 3000 + port 9090",
+            MonitoredApp.ofPort("api", 3000).apply { extraPorts = "9090" }.targetLabel()
+        )
+    }
+
+    @Test
+    fun resolveAllKeepsOnlyResolvedTargets() {
+        assertTrue(TargetResolver.resolveAll(emptyList()).isEmpty())
+        // docker never resolves to a host pid; a non-positive pid never resolves either
+        assertTrue(TargetResolver.resolveAll(listOf(Target.Docker("x"), Target.Pid(-1))).isEmpty())
+    }
+
     // --- TargetResolver.commandMatches (process-name target) ---------------------------------
 
     @Test
@@ -57,6 +107,7 @@ class AppMonitorModelTest {
     @Test
     fun monitoredAppSurvivesXmlRoundTrip() {
         val app = MonitoredApp.ofPort("eparts-api", 3003).apply {
+            extraPorts = "9090, 4000"
             healthUrl = "http://localhost:3003/health"
             memAlertMb = 512
             tag = "backend"
@@ -69,6 +120,7 @@ class AppMonitorModelTest {
         assertEquals("eparts-api", restored.name)
         assertEquals(TargetKind.PORT, restored.targetKind)
         assertEquals(3003, restored.port)
+        assertEquals("9090, 4000", restored.extraPorts)
         assertEquals("http://localhost:3003/health", restored.healthUrl)
         assertEquals(512, restored.memAlertMb)
         assertEquals("backend", restored.tag)
