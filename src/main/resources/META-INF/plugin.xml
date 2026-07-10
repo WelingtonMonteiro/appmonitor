@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.13.0</strong> (action rules):</p>
+        <ul>
+            <li>New: <b>automated action rules</b> per app. Tick <b>Restart when it goes down</b> to
+                auto-run the app's start command whenever it crashes, and set an <b>if memory ≥ N MB
+                held for M minutes → notify / kill / restart</b> rule. Rules are edge-triggered (fire
+                once, re-arm on recovery) and each firing is logged in the Events tab.</li>
+        </ul>
         <p><strong>0.12.0</strong> (per-app dashboard: events):</p>
         <ul>
             <li>New: the memory dialog gained an <b>Events</b> tab - a per-app timeline of

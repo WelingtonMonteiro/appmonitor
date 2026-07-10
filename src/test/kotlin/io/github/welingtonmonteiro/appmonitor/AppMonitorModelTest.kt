@@ -112,6 +112,10 @@ class AppMonitorModelTest {
             memAlertMb = 512
             tag = "backend"
             colorRgb = 0x329205
+            restartOnDown = true
+            memActionMb = 1024
+            memActionMinutes = 5
+            memAction = "RESTART"
         }
 
         val restored = XmlSerializer.deserialize(XmlSerializer.serialize(app), MonitoredApp::class.java)
@@ -125,5 +129,9 @@ class AppMonitorModelTest {
         assertEquals(512, restored.memAlertMb)
         assertEquals("backend", restored.tag)
         assertEquals(0x329205, restored.colorRgb)
+        assertTrue(restored.restartOnDown)
+        assertEquals(1024, restored.memActionMb)
+        assertEquals(5, restored.memActionMinutes)
+        assertEquals("RESTART", restored.memAction)
     }
 }

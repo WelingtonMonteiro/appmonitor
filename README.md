@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.12.0** (per-app event timeline). See the
+**Status:** actively developed — **v0.13.0** (action rules). See the
 [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
 what comes next.
 
@@ -50,6 +50,8 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 - **Alerts & notifications** — a balloon fires when an app goes **down**, when its **memory/CPU**
   crosses the alert you set, or when a **steady memory leak** is detected (edge-triggered, re-arms
   on recovery).
+- **Action rules** — per app, **auto-restart when it goes down**, and *if memory ≥ N MB held for M
+  minutes → notify / kill / restart*; edge-triggered and logged in the Events tab.
 - **Per-process breakdown** — the memory chart's **Processes** tab lists every PID of the tree with
   its command, memory and share of the tree.
 - **Event timeline** — the memory dialog's **Events** tab logs, per app, when it started, stopped,

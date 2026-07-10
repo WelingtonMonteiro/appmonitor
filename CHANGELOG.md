@@ -6,8 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Fase 4 in progress. Next: action rules (if down → restart, if mem high → notify/kill). See
-  [docs/ROADMAP.md](docs/ROADMAP.md).
+- **Fase 4 is complete** — the planned roadmap (Fase 0–4) is done. The only deferred item is remote
+  monitoring over SSH, which stays out of scope for now. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.13.0] - 2026-07-10
+
+**Fase 4 (part 3) — action rules.**
+
+### Added
+- **Automated action rules** per app, in the Add/Edit dialog:
+  - **Restart when it goes down** — when the app has a start command, auto-run it as soon as the app
+    is found to be down.
+  - **Sustained-memory action** — *if memory ≥ N MB held for M minutes → notify / kill / restart*.
+  Both rules are **edge-triggered**: they fire once when the condition becomes true and re-arm only
+  when it clears (a crash loop or a persistently high value can't fire every refresh). Every firing
+  is recorded in the **Events** tab.
 
 ## [0.12.0] - 2026-07-10
 
@@ -165,7 +178,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.9.0...v0.10.0
