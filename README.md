@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.7.0** (settings page). See the [CHANGELOG](CHANGELOG.md) for
+**Status:** actively developed — **v0.8.0** (docker-aware). See the [CHANGELOG](CHANGELOG.md) for
 what changed in each version and the [ROADMAP](docs/ROADMAP.md) for what comes next.
 
 Compatible with IntelliJ IDEA, WebStorm, PyCharm, PhpStorm and other IntelliJ-based IDEs **2023.3+**.
@@ -23,7 +23,8 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 
 - **Live table**, refreshed every 2 seconds: Name · Port(s) · PID · Uptime · Status · Memory ·
   Mem % · CPU % · **Mem trend**. Row selection is kept across refreshes.
-- **Add apps by target**: a TCP port (the common case), a process-name regex, or a fixed PID.
+- **Add apps by target**: a TCP port (the common case), a process-name regex, a fixed PID, or a
+  **docker container** (CPU/memory/ports from `docker stats` / `docker inspect`).
 - **Start / Stop / Restart by command** — give an app a start command (with optional stop command,
   working directory and `.env` file) and control it from the toolbar, even for apps the IDE never
   launched.

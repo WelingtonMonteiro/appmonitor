@@ -56,7 +56,7 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 ## Fase 3 — Mini gerenciador (opcional) — 🚧 parcial (v0.6.0–v0.7.0)
 
 - [x] 🆕 **Start / Stop / Restart via comando do usuário** por app (working dir + comando + `.env`). (v0.6.0)
-- [ ] 🆕 **Docker-aware**: `docker stats`/CLI (nome do container como alvo).
+- [x] 🆕 **Docker-aware**: `docker stats`/`inspect`/`port` (nome do container como alvo). (v0.8.0)
 - [x] 🆕 **Página de Settings**: intervalo de refresh + toggle de notificações. (v0.7.0)
       _(limites padrão / cores / comportamento de alerta ficam p/ depois)_
 - [ ] 🆕 **Ponte com o Multiple Run**: importar apps que o MR lançou.

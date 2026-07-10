@@ -8,7 +8,7 @@ import java.util.UUID
  * track a **target** and re-resolve it to a live PID every cycle (so an app that went down and came
  * back is picked up again).
  */
-enum class TargetKind { PORT, PROCESS_NAME, PID }
+enum class TargetKind { PORT, PROCESS_NAME, PID, DOCKER }
 
 /** The resolved, strongly-typed target of a [MonitoredApp] (derived from its persisted fields). */
 sealed interface Target {
@@ -20,6 +20,9 @@ sealed interface Target {
 
     /** A fixed PID. */
     data class Pid(val pid: Long) : Target
+
+    /** A docker container by name or id (sampled via the docker CLI, not a host PID). */
+    data class Docker(val container: String) : Target
 }
 
 /**
@@ -42,6 +45,8 @@ class MonitoredApp {
     var processNameRegex: String = ""
     /** Used when [targetKind] is [TargetKind.PID]. */
     var pid: Long = 0
+    /** Used when [targetKind] is [TargetKind.DOCKER]: the container name or id. */
+    var containerName: String = ""
 
     // --- optional, for later phases ---
     var healthUrl: String = ""
@@ -62,6 +67,7 @@ class MonitoredApp {
         TargetKind.PORT -> Target.Port(port)
         TargetKind.PROCESS_NAME -> Target.ProcessName(processNameRegex)
         TargetKind.PID -> Target.Pid(pid)
+        TargetKind.DOCKER -> Target.Docker(containerName)
     }
 
     /** Short human description of the target (for the tooltip / secondary text). */
@@ -69,6 +75,7 @@ class MonitoredApp {
         TargetKind.PORT -> "port $port"
         TargetKind.PROCESS_NAME -> "name ~ /$processNameRegex/"
         TargetKind.PID -> "pid $pid"
+        TargetKind.DOCKER -> "docker $containerName"
     }
 
     companion object {

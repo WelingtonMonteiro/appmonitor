@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.8.0</strong> (docker-aware):</p>
+        <ul>
+            <li>New: monitor a <b>docker container</b> as a target. Add an app with the <b>Docker
+                container</b> target and its CPU, memory, published ports, uptime and up/down come
+                from <code>docker stats</code> / <code>docker inspect</code> - the memory chart and
+                leak analysis work the same as for a process.</li>
+        </ul>
         <p><strong>0.7.0</strong> (settings page):</p>
         <ul>
             <li>New: <b>Settings → Tools → App Monitor</b> - set the <b>refresh interval</b> and toggle

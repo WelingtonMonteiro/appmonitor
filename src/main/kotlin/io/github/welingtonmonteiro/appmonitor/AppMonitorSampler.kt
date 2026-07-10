@@ -1,6 +1,7 @@
 package io.github.welingtonmonteiro.appmonitor
 
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
+import io.github.welingtonmonteiro.appmonitor.model.TargetKind
 
 /** One process of an app's tree, for the per-process breakdown in the memory chart. */
 data class ProcRow(val pid: Long, val command: String, val rssKb: Long, val pctOfTree: Double)
@@ -55,6 +56,10 @@ class AppMonitorSampler {
         val nextPrev = HashMap<String, Map<Long, Double>>()
         val rows = ArrayList<AppSample>(apps.size)
         for (app in apps) {
+            if (app.targetKind == TargetKind.DOCKER) {
+                rows.add(buildDockerRow(app, now))
+                continue
+            }
             val rootPid = rootPidByApp[app.id]
             val tree = treePidsByApp[app.id]
             val stats = if (tree != null) ProcessStatsSampler.aggregate(statsByPid, tree) else null
@@ -120,6 +125,31 @@ class AppMonitorSampler {
             while (history.size > MAX_SESSION_SAMPLES) history.removeFirst()
             return history.toList().takeLast(TREND_SAMPLES).map { it.rssKb }
         }
+    }
+
+    /** Build a row for a docker-target app from the docker CLI (no host PID / process tree). */
+    private fun buildDockerRow(app: MonitoredApp, now: Long): AppSample {
+        val docker = DockerCli.sample(app.containerName)
+        if (docker == null || !docker.up) return AppSample.down(app)
+        // a container restart gets a new StartedAt, which resets the recorded memory session
+        val memTrend = recordHistory(app.id, docker.startedAtMs ?: 0L, now, docker.memUsedKb, docker.memPercent)
+        val uptimeMs = if (docker.startedAtMs != null && docker.startedAtMs > 0) now - docker.startedAtMs else -1L
+        return AppSample(
+            appId = app.id,
+            name = app.name,
+            targetLabel = app.targetLabel(),
+            up = true,
+            rootPid = -1,
+            ports = docker.ports,
+            uptimeMs = uptimeMs,
+            rssKb = docker.memUsedKb,
+            memPercent = docker.memPercent,
+            cpuPercent = docker.cpuPercent,
+            memTrendKb = memTrend,
+            health = HealthChecker.healthOf(app.healthUrl),
+            tag = app.tag,
+            colorRgb = app.colorRgb,
+        )
     }
 
     /** A snapshot of the full recorded memory session of an app (safe to read off the EDT). */

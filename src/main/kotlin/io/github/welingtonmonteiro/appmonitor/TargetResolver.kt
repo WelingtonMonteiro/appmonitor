@@ -15,6 +15,8 @@ object TargetResolver {
         is Target.Port -> resolvePort(target.port)
         is Target.Pid -> resolvePid(target.pid)
         is Target.ProcessName -> resolveProcessName(target.regex)
+        // docker containers are not a host PID - the sampler handles them via the docker CLI
+        is Target.Docker -> null
     }
 
     private fun resolvePort(port: Int): Long? {

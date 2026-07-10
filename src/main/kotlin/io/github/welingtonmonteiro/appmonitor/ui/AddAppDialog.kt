@@ -23,7 +23,7 @@ import javax.swing.JComponent
 class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null) : DialogWrapper(project) {
 
     private val nameField = JBTextField(24)
-    private val kindCombo = ComboBox(arrayOf("Port", "Process name", "PID"))
+    private val kindCombo = ComboBox(arrayOf("Port", "Process name", "PID", "Docker container"))
     private val valueLabel = JBLabel("Port:")
     private val valueField = JBTextField(24)
     private val healthField = JBTextField(24)
@@ -49,12 +49,14 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
             TargetKind.PORT -> 0
             TargetKind.PROCESS_NAME -> 1
             TargetKind.PID -> 2
+            TargetKind.DOCKER -> 3
         }
         valueLabel.text = valueLabelFor(kindCombo.selectedIndex)
         valueField.text = when (app.targetKind) {
             TargetKind.PORT -> if (app.port > 0) app.port.toString() else ""
             TargetKind.PROCESS_NAME -> app.processNameRegex
             TargetKind.PID -> if (app.pid > 0) app.pid.toString() else ""
+            TargetKind.DOCKER -> app.containerName
         }
         healthField.text = app.healthUrl
         memAlertField.text = if (app.memAlertMb > 0) app.memAlertMb.toString() else ""
@@ -102,6 +104,11 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
                     return ValidationInfo("Enter a positive PID.", valueField)
                 }
             }
+            3 -> {
+                if (value.isBlank()) {
+                    return ValidationInfo("Enter a docker container name or id.", valueField)
+                }
+            }
             else -> {
                 if (value.isBlank()) {
                     return ValidationInfo("Enter a process-name pattern (regex).", valueField)
@@ -135,6 +142,10 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
                 app.targetKind = TargetKind.PID
                 app.pid = value.toLong()
             }
+            3 -> {
+                app.targetKind = TargetKind.DOCKER
+                app.containerName = value
+            }
             else -> {
                 app.targetKind = TargetKind.PROCESS_NAME
                 app.processNameRegex = value
@@ -154,6 +165,7 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     private fun valueLabelFor(index: Int): String = when (index) {
         0 -> "Port:"
         2 -> "PID:"
+        3 -> "Container:"
         else -> "Name regex:"
     }
 }

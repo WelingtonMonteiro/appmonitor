@@ -57,7 +57,7 @@ class AppTableModel : AbstractTableModel() {
                 s.up -> "—"
                 else -> ""
             }
-            Column.PID -> if (s.up) s.rootPid.toString() else "—"
+            Column.PID -> if (s.up && s.rootPid > 0) s.rootPid.toString() else "—"
             Column.UPTIME -> if (s.up) ProcessStatsSampler.formatUptime(s.uptimeMs) else "—"
             Column.STATUS -> when {
                 !s.up -> "down"
