@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.11.0** (persistent history). See the
+**Status:** actively developed — **v0.12.0** (per-app event timeline). See the
 [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
 what comes next.
 
@@ -52,6 +52,8 @@ found it shows **down**, and flips back to **up** the moment it reappears.
   on recovery).
 - **Per-process breakdown** — the memory chart's **Processes** tab lists every PID of the tree with
   its command, memory and share of the tree.
+- **Event timeline** — the memory dialog's **Events** tab logs, per app, when it started, stopped,
+  restarted, went healthy/unhealthy, and every memory/CPU/leak alert, each timestamped.
 - **Show/hide columns** from the toolbar, **persisted per project**.
 - **Settings page** (Settings → Tools → App Monitor) — refresh interval and alert-notification toggle.
 - **Kill Process on Port** — kill whatever process (and its entire tree) is listening on a port, plus

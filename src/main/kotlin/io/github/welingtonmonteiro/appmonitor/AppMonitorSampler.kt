@@ -33,6 +33,8 @@ class AppMonitorSampler(private val store: HistoryStore? = null) {
     private val persistTick = HashMap<String, Int>()
     /** appId -> latest per-process breakdown of the tree, guarded by [historyLock]. */
     private val breakdownByApp = HashMap<String, List<ProcRow>>()
+    /** appId -> bounded log of lifecycle/alert events, guarded by [historyLock]. */
+    private val eventsByApp = HashMap<String, ArrayDeque<AppEvent>>()
     private val historyLock = Any()
 
     /** Resolve + measure every app; order of the result matches the input order. */
@@ -171,6 +173,20 @@ class AppMonitorSampler(private val store: HistoryStore? = null) {
     fun previousHistory(appId: String): List<MemoryHistory.Sample> =
         synchronized(historyLock) { previousByApp[appId] ?: emptyList() }
 
+    /** Append events to an app's log (called from the panel each refresh); bounded to [MAX_EVENTS]. */
+    fun recordEvents(appId: String, events: List<AppEvent>) {
+        if (events.isEmpty()) return
+        synchronized(historyLock) {
+            val log = eventsByApp.getOrPut(appId) { ArrayDeque() }
+            log.addAll(events)
+            while (log.size > MAX_EVENTS) log.removeFirst()
+        }
+    }
+
+    /** A snapshot of an app's event log (oldest→newest), safe to read off the EDT. */
+    fun events(appId: String): List<AppEvent> =
+        synchronized(historyLock) { eventsByApp[appId]?.toList() ?: emptyList() }
+
     /** Persist every current session now (call when the tool window closes, to not lose the tail). */
     fun flush() {
         if (store == null) return
@@ -188,6 +204,7 @@ class AppMonitorSampler(private val store: HistoryStore? = null) {
             lastRootPidByApp.remove(appId)
             previousByApp.remove(appId)
             breakdownByApp.remove(appId)
+            eventsByApp.remove(appId)
             restored.remove(appId)
             persistTick.remove(appId)
         }
@@ -247,5 +264,7 @@ class AppMonitorSampler(private val store: HistoryStore? = null) {
         const val TREND_SAMPLES = 30
         /** Persist the current session to disk every N refreshes (~30s at a 2s refresh). */
         const val PERSIST_EVERY = 15
+        /** Bounds the per-app event log. */
+        const val MAX_EVENTS = 200
     }
 }

@@ -60,10 +60,10 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 - [x] 🆕 **Página de Settings**: intervalo de refresh + toggle de notificações. (v0.7.0)
       _(limites padrão / cores / comportamento de alerta ficam p/ depois)_
 
-## Fase 4 — Alcance (stretch) — 🚧 parcial (v0.11.0)
+## Fase 4 — Alcance (stretch) — 🚧 parcial (v0.11.0–v0.12.0)
 
 - [x] 🆕 **Histórico persistente** entre sessões + comparação: sessão salva em disco, restaurada no restart; sessão anterior desenhada no gráfico. (v0.11.0)
-- [ ] 🆕 **Mini-dashboard por app** (aba dedicada com gráficos e eventos).
+- [x] 🆕 **Mini-dashboard por app**: aba **Events** no diálogo de memória (started/stopped/restarted, healthy/unhealthy, alertas de mem/CPU/leak com timestamp). (v0.12.0)
 - [ ] 🆕 **Regras de ação** ("se app X cair, rode Y" / "se mem > 90% por 5 min, notifique/mata").
 - [ ] 🆕 **Monitor remoto via SSH** — _fora de escopo por ora (só no ROADMAP)._
 
