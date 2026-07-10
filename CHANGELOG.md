@@ -6,8 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- Next: the Multiple Run bridge (Fase 3) and the leftover Fase 2 bits (env viewer, multiple targets
-  per app). See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Next: multiple targets per app — the last Fase 2 bit. See [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.9.0] - 2026-07-10
+
+**Fase 2 (part 3) — env viewer.**
+
+### Added
+- **Env Viewer**: for an app with a `.env` file configured, a toolbar button opens a read-only table
+  of its variables. Secret-looking values (keys containing password / token / secret / key / …) are
+  **masked** by default, with a **Show values** toggle to reveal them; the list is never editable.
 
 ## [0.8.0] - 2026-07-09
 
@@ -117,7 +125,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.5.0...v0.6.0

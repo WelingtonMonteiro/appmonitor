@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.9.0</strong> (env viewer):</p>
+        <ul>
+            <li>New: <b>Env Viewer</b> - for an app with a <code>.env</code> file configured, a toolbar
+                button shows its variables in a read-only table. Secret-looking values
+                (password / token / key / …) are <b>masked</b> by default, with a <b>Show values</b>
+                toggle to reveal them.</li>
+        </ul>
         <p><strong>0.8.0</strong> (docker-aware):</p>
         <ul>
             <li>New: monitor a <b>docker container</b> as a target. Add an app with the <b>Docker
