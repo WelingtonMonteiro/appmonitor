@@ -159,6 +159,22 @@ object MemoryHistory {
         return String.format(Locale.US, "%dh %02dm", hours, minutes % 60)
     }
 
+    /** Parses the CSV produced by [toCsv] back into samples; skips the header and any malformed row. */
+    fun fromCsv(text: String): List<Sample> {
+        val out = ArrayList<Sample>()
+        for (line in text.lineSequence()) {
+            val row = line.trim()
+            if (row.isEmpty() || row.startsWith("timestamp_ms")) continue
+            val cols = row.split(',')
+            if (cols.size < 4) continue
+            val timeMs = cols[0].trim().toLongOrNull() ?: continue
+            val rssKb = cols[2].trim().toLongOrNull() ?: continue
+            val percent = cols[3].trim().toDoubleOrNull() ?: 0.0
+            out.add(Sample(timeMs, rssKb, percent))
+        }
+        return out
+    }
+
     /** Serializes the samples to CSV: a header row then one row per sample (US decimal, ISO time). */
     fun toCsv(samples: List<Sample>): String {
         val sb = StringBuilder("timestamp_ms,iso_time,rss_kb,percent\n")

@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.Project
@@ -31,6 +32,7 @@ import io.github.welingtonmonteiro.appmonitor.AppSample
 import io.github.welingtonmonteiro.appmonitor.DiscoveryScanner
 import io.github.welingtonmonteiro.appmonitor.EnvFile
 import io.github.welingtonmonteiro.appmonitor.EnvViewer
+import io.github.welingtonmonteiro.appmonitor.HistoryStore
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
@@ -39,6 +41,7 @@ import io.github.welingtonmonteiro.appmonitor.state.MonitoredAppsState
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
+import java.nio.file.Paths
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.Dimension
@@ -59,7 +62,10 @@ import javax.swing.table.TableColumn
 class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true, true), Disposable {
 
     private val state = MonitoredAppsState.getInstance(project)
-    private val sampler = AppMonitorSampler()
+    // persist per-app memory sessions under the IDE system dir, scoped by project (survives restarts)
+    private val sampler = AppMonitorSampler(
+        HistoryStore(Paths.get(PathManager.getSystemPath(), "appMonitor", "history", project.locationHash))
+    )
     private val model = AppTableModel()
     private val table = JBTable(model)
     private val alarm = Alarm(Alarm.ThreadToUse.POOLED_THREAD, this)
@@ -262,7 +268,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             project, "Stop monitoring ${ids.size} app(s)?", "Remove App", Messages.getQuestionIcon()
         )
         if (proceed != Messages.YES) return
-        ids.forEach { state.remove(it) }
+        ids.forEach { state.remove(it); sampler.forget(it) }
         refreshNow()
     }
 
@@ -450,7 +456,10 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     private fun openChart(sample: AppSample) {
         if (!sample.up) return
         val name = sample.name.ifBlank { sample.targetLabel }
-        MemoryChartDialog(project, name, sampler.history(sample.appId), sampler.breakdown(sample.appId)).show()
+        MemoryChartDialog(
+            project, name, sampler.history(sample.appId), sampler.breakdown(sample.appId),
+            sampler.previousHistory(sample.appId)
+        ).show()
     }
 
     /** Rebuild the table's columns from the model, skipping the ones the user hid (Name always stays). */
@@ -519,6 +528,7 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
     override fun dispose() {
         disposed = true
         alarm.cancelAllRequests()
+        sampler.flush() // don't lose the tail of each session on close/restart
     }
 
     companion object {

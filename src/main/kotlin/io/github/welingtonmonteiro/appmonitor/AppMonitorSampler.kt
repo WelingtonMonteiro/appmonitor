@@ -15,7 +15,7 @@ data class ProcRow(val pid: Long, val command: String, val rssKb: Long, val pctO
  * delta (docker-stats style), and must therefore be called from a single background thread; it is
  * not thread-safe against concurrent {@link #sample} calls.</p>
  */
-class AppMonitorSampler {
+class AppMonitorSampler(private val store: HistoryStore? = null) {
 
     /** appId -> (pid -> cumulative CPU seconds) captured on the previous cycle. */
     private val prevCpuByApp = HashMap<String, Map<Long, Double>>()
@@ -25,6 +25,12 @@ class AppMonitorSampler {
     /** appId -> recorded memory session, guarded by [historyLock] (read from EDT, written here). */
     private val historyByApp = HashMap<String, ArrayDeque<MemoryHistory.Sample>>()
     private val lastRootPidByApp = HashMap<String, Long>()
+    /** appId -> the last finished session, kept for comparison (guarded by [historyLock]). */
+    private val previousByApp = HashMap<String, List<MemoryHistory.Sample>>()
+    /** appIds already restored from disk this run (guarded by [historyLock]). */
+    private val restored = HashSet<String>()
+    /** appId -> refresh counter, so the current session is flushed to disk only every so often. */
+    private val persistTick = HashMap<String, Int>()
     /** appId -> latest per-process breakdown of the tree, guarded by [historyLock]. */
     private val breakdownByApp = HashMap<String, List<ProcRow>>()
     private val historyLock = Any()
@@ -122,12 +128,70 @@ class AppMonitorSampler {
     private fun recordHistory(appId: String, rootPid: Long, now: Long, rssKb: Long, percent: Double): List<Long> {
         synchronized(historyLock) {
             val history = historyByApp.getOrPut(appId) { ArrayDeque() }
-            if (lastRootPidByApp[appId] != rootPid) history.clear() // new process -> new session
+            restoreFromDisk(appId, history)
+            if (lastRootPidByApp[appId] != rootPid) {
+                // the previous process/session ended: keep it as the comparison baseline, then reset
+                if (history.isNotEmpty()) {
+                    previousByApp[appId] = history.toList()
+                    store?.saveCurrent(appId, lastRootPidByApp[appId] ?: rootPid, history.toList())
+                    store?.promoteToPrevious(appId)
+                }
+                history.clear()
+            }
             lastRootPidByApp[appId] = rootPid
             history.addLast(MemoryHistory.Sample(now, rssKb, if (percent < 0) 0.0 else percent))
             while (history.size > MAX_SESSION_SAMPLES) history.removeFirst()
+            maybePersist(appId, rootPid, history)
             return history.toList().takeLast(TREND_SAMPLES).map { it.rssKb }
         }
+    }
+
+    /** On the first sighting of an app this run, restore its persisted session and previous one. */
+    private fun restoreFromDisk(appId: String, history: ArrayDeque<MemoryHistory.Sample>) {
+        if (store == null || !restored.add(appId)) return
+        val current = store.loadCurrent(appId)
+        if (current.isNotEmpty()) {
+            history.addAll(current)
+            // adopt the persisted root pid so a still-running process continues the same session
+            lastRootPidByApp[appId] = store.loadCurrentPid(appId) ?: lastRootPidByApp[appId] ?: Long.MIN_VALUE
+        }
+        val prev = store.loadPrevious(appId)
+        if (prev.isNotEmpty()) previousByApp[appId] = prev
+    }
+
+    /** Flush the current session to disk every [PERSIST_EVERY] refreshes (bounds the write rate). */
+    private fun maybePersist(appId: String, rootPid: Long, history: ArrayDeque<MemoryHistory.Sample>) {
+        if (store == null) return
+        val n = (persistTick[appId] ?: 0) + 1
+        persistTick[appId] = n
+        if (n % PERSIST_EVERY == 0) store.saveCurrent(appId, rootPid, history.toList())
+    }
+
+    /** The last finished session of an app (for the chart's comparison); safe to read off the EDT. */
+    fun previousHistory(appId: String): List<MemoryHistory.Sample> =
+        synchronized(historyLock) { previousByApp[appId] ?: emptyList() }
+
+    /** Persist every current session now (call when the tool window closes, to not lose the tail). */
+    fun flush() {
+        if (store == null) return
+        synchronized(historyLock) {
+            for ((appId, history) in historyByApp) {
+                if (history.isNotEmpty()) store.saveCurrent(appId, lastRootPidByApp[appId] ?: -1L, history.toList())
+            }
+        }
+    }
+
+    /** Drop and delete all recorded/persisted data of an app (when it stops being monitored). */
+    fun forget(appId: String) {
+        synchronized(historyLock) {
+            historyByApp.remove(appId)
+            lastRootPidByApp.remove(appId)
+            previousByApp.remove(appId)
+            breakdownByApp.remove(appId)
+            restored.remove(appId)
+            persistTick.remove(appId)
+        }
+        store?.deleteFor(appId)
     }
 
     /** Build a row for a docker-target app from the docker CLI (no host PID / process tree). */
@@ -181,5 +245,7 @@ class AppMonitorSampler {
         const val MAX_SESSION_SAMPLES = 5000
         /** Samples shown in the row sparkline (~last minute at a 2s refresh). */
         const val TREND_SAMPLES = 30
+        /** Persist the current session to disk every N refreshes (~30s at a 2s refresh). */
+        const val PERSIST_EVERY = 15
     }
 }

@@ -14,6 +14,7 @@ import com.intellij.ui.table.JBTable
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcRow
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
+import java.awt.BasicStroke
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -39,6 +40,8 @@ class MemoryChartDialog(
     private val appName: String,
     private val samples: List<MemoryHistory.Sample>,
     private val breakdown: List<ProcRow> = emptyList(),
+    /** The last finished session, drawn faintly for comparison; empty when there is none. */
+    private val previousSamples: List<MemoryHistory.Sample> = emptyList(),
 ) : DialogWrapper(project) {
 
     init {
@@ -67,13 +70,29 @@ class MemoryChartDialog(
 
     private fun chartTab(): JComponent {
         val panel = JPanel(BorderLayout(0, 8))
-        panel.add(ChartPanel(samples), BorderLayout.CENTER)
-        val analysis = JBTextArea(MemoryHistory.summaryText(appName, MemoryHistory.analyze(samples))).apply {
+        panel.add(ChartPanel(samples, previousSamples), BorderLayout.CENTER)
+        val text = MemoryHistory.summaryText(appName, MemoryHistory.analyze(samples)) + comparisonText()
+        val analysis = JBTextArea(text).apply {
             isEditable = false
             font = Font(Font.MONOSPACED, Font.PLAIN, font.size)
         }
-        panel.add(ScrollPaneFactory.createScrollPane(analysis).apply { preferredSize = Dimension(700, 130) }, BorderLayout.SOUTH)
+        panel.add(ScrollPaneFactory.createScrollPane(analysis).apply { preferredSize = Dimension(700, 150) }, BorderLayout.SOUTH)
         return panel
+    }
+
+    /** A short comparison of this session's peak against the previous session (empty when none). */
+    private fun comparisonText(): String {
+        if (previousSamples.isEmpty()) return ""
+        val cur = MemoryHistory.analyze(samples)
+        val prev = MemoryHistory.analyze(previousSamples)
+        val delta = cur.maxRssKb - prev.maxRssKb
+        val sign = if (delta >= 0) "+" else "-"
+        return buildString {
+            append("\nPrevious session (dashed): peak ").append(MemoryHistory.mem(prev.maxRssKb))
+                .append(", ").append(MemoryHistory.verdictText(prev)).append('\n')
+            append("This session peak ").append(MemoryHistory.mem(cur.maxRssKb))
+                .append(" (").append(sign).append(MemoryHistory.mem(Math.abs(delta))).append(" vs previous)\n")
+        }
     }
 
     /** The per-process breakdown of the app's tree (PID, command, memory and share of the tree). */
@@ -111,8 +130,15 @@ class MemoryChartDialog(
         }
     }
 
-    /** Paints RSS (MiB) over elapsed time, with axes, gridlines, tick labels and the peak marked. */
-    private class ChartPanel(private val samples: List<MemoryHistory.Sample>) : JComponent() {
+    /**
+     * Paints RSS (MiB) over elapsed time with axes, gridlines, tick labels and the peak marked. When
+     * a [previous] session is given it is drawn faint and dashed under the current one, on a shared
+     * scale (the larger time span and peak of the two), so the two sessions are comparable.
+     */
+    private class ChartPanel(
+        private val samples: List<MemoryHistory.Sample>,
+        private val previous: List<MemoryHistory.Sample> = emptyList(),
+    ) : JComponent() {
 
         init {
             preferredSize = Dimension(680, 260)
@@ -126,7 +152,7 @@ class MemoryChartDialog(
                 g2.color = JBColor.background()
                 g2.fillRect(0, 0, width, height)
 
-                if (samples.size < 2) {
+                if (samples.size < 2 && previous.size < 2) {
                     g2.color = JBColor.GRAY
                     g2.drawString("Not enough data yet - keep the app running.", 16, height / 2)
                     return
@@ -140,9 +166,8 @@ class MemoryChartDialog(
                 val plotH = height - top - bottom
                 if (plotW <= 0 || plotH <= 0) return
 
-                val t0 = samples.first().timeMs
-                val tSpan = (samples.last().timeMs - t0).coerceAtLeast(1)
-                val maxRss = samples.maxOf { it.rssKb }.coerceAtLeast(1)
+                val tSpan = maxOf(span(samples), span(previous), 1L)
+                val maxRss = maxOf(peak(samples), peak(previous), 1L)
                 val yMax = (maxRss * 1.1).toLong().coerceAtLeast(1)
 
                 val grid = JBColor(0xE0E0E0, 0x3C3F41)
@@ -175,32 +200,64 @@ class MemoryChartDialog(
                 g2.drawLine(left, top, left, top + plotH)
                 g2.drawLine(left, top + plotH, left + plotW, top + plotH)
 
-                // the RSS curve
-                g2.color = JBColor(0x3573B8, 0x548AF7)
-                var prevX = left
-                var prevY = yFor(samples[0].rssKb, yMax, top, plotH)
-                var peakX = prevX
-                var peakY = prevY
-                for (i in 1 until samples.size) {
-                    val x = left + (plotW.toLong() * (samples[i].timeMs - t0) / tSpan).toInt()
-                    val y = yFor(samples[i].rssKb, yMax, top, plotH)
-                    g2.drawLine(prevX, prevY, x, y)
-                    if (samples[i].rssKb == maxRss) {
-                        peakX = x
-                        peakY = y
-                    }
-                    prevX = x
-                    prevY = y
+                // previous session: faint dashed line under the current one
+                if (previous.size >= 2) {
+                    val stroke = g2.stroke
+                    g2.color = JBColor(0x9AA7B0, 0x6B7178)
+                    g2.stroke = BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 1f, floatArrayOf(4f, 4f), 0f)
+                    drawSeries(g2, previous, tSpan, yMax, left, top, plotW, plotH)
+                    g2.stroke = stroke
                 }
 
-                // peak marker
-                g2.color = JBColor(0xC0392B, 0xE06C5A)
-                g2.fillOval(peakX - 3, peakY - 3, 6, 6)
-                g2.drawString("peak ${MemoryHistory.mem(maxRss)}", (peakX + 6).coerceAtMost(width - 90), (peakY - 6).coerceAtLeast(top + 10))
+                // current session: solid line + peak marker
+                if (samples.size >= 2) {
+                    g2.color = JBColor(0x3573B8, 0x548AF7)
+                    val (peakX, peakY) = drawSeries(g2, samples, tSpan, yMax, left, top, plotW, plotH)
+                    g2.color = JBColor(0xC0392B, 0xE06C5A)
+                    g2.fillOval(peakX - 3, peakY - 3, 6, 6)
+                    g2.drawString("peak ${MemoryHistory.mem(peak(samples))}",
+                        (peakX + 6).coerceAtMost(width - 90), (peakY - 6).coerceAtLeast(top + 10))
+                }
+
+                // legend when comparing
+                if (previous.size >= 2) {
+                    g2.color = JBColor.foreground()
+                    g2.drawString("— this   ---- previous", left + plotW - 150, top + 12)
+                }
             } finally {
                 g2.dispose()
             }
         }
+
+        /** Draw a series' polyline on the shared scale; returns the pixel of its peak sample. */
+        private fun drawSeries(
+            g2: Graphics2D, series: List<MemoryHistory.Sample>, tSpan: Long, yMax: Long,
+            left: Int, top: Int, plotW: Int, plotH: Int,
+        ): Pair<Int, Int> {
+            val t0 = series.first().timeMs
+            val maxRss = peak(series)
+            var prevX = left
+            var prevY = yFor(series[0].rssKb, yMax, top, plotH)
+            var peakX = prevX
+            var peakY = prevY
+            for (i in 1 until series.size) {
+                val x = left + (plotW.toLong() * (series[i].timeMs - t0) / tSpan).toInt()
+                val y = yFor(series[i].rssKb, yMax, top, plotH)
+                g2.drawLine(prevX, prevY, x, y)
+                if (series[i].rssKb == maxRss) {
+                    peakX = x
+                    peakY = y
+                }
+                prevX = x
+                prevY = y
+            }
+            return peakX to peakY
+        }
+
+        private fun span(s: List<MemoryHistory.Sample>): Long =
+            if (s.size >= 2) s.last().timeMs - s.first().timeMs else 0L
+
+        private fun peak(s: List<MemoryHistory.Sample>): Long = s.maxOfOrNull { it.rssKb } ?: 0L
 
         private fun yFor(rssKb: Long, yMax: Long, top: Int, plotH: Int): Int =
             top + plotH - (plotH.toLong() * rssKb / yMax).toInt()

@@ -31,6 +31,13 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.11.0</strong> (persistent history):</p>
+        <ul>
+            <li>New: each app's <b>memory session is saved to disk</b>, so the chart and leak analysis
+                <b>survive IDE restarts</b>. When the process restarts, the finished session is kept as
+                the <b>previous</b> one and the memory chart draws it dashed underneath the current one,
+                with a peak comparison - so you can tell if this run is heavier than the last.</li>
+        </ul>
         <p><strong>0.10.0</strong> (multiple targets per app):</p>
         <ul>
             <li>New: an app can now aggregate <b>several targets</b> in one row. Add <b>Extra ports</b>
