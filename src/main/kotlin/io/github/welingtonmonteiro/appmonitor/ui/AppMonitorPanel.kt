@@ -29,6 +29,8 @@ import io.github.welingtonmonteiro.appmonitor.AppMonitorSettings
 import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
 import io.github.welingtonmonteiro.appmonitor.AppSample
 import io.github.welingtonmonteiro.appmonitor.DiscoveryScanner
+import io.github.welingtonmonteiro.appmonitor.EnvFile
+import io.github.welingtonmonteiro.appmonitor.EnvViewer
 import io.github.welingtonmonteiro.appmonitor.MemoryHistory
 import io.github.welingtonmonteiro.appmonitor.ProcessStatsSampler
 import io.github.welingtonmonteiro.appmonitor.model.MonitoredApp
@@ -133,6 +135,13 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
                 override fun actionPerformed(e: AnActionEvent) {
                     selectedSamples().singleOrNull()?.let { openChart(it) }
                 }
+            })
+            add(object : DumbAwareAction("Env Viewer", "Show the .env variables of the selected app", AllIcons.Actions.Properties) {
+                override fun getActionUpdateThread() = ActionUpdateThread.EDT
+                override fun update(e: AnActionEvent) {
+                    e.presentation.isEnabled = selectedApp()?.envFile?.isNotBlank() == true
+                }
+                override fun actionPerformed(e: AnActionEvent) = showEnv()
             })
             addSeparator()
             add(object : DumbAwareAction("Refresh", "Refresh now", AllIcons.Actions.Refresh) {
@@ -300,6 +309,31 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
             Thread.sleep(RESTART_STOP_WAIT_MS)
             AppCommandRunner.start(app, project.basePath)
             refreshNow()
+        }
+    }
+
+    /** Open the read-only viewer of the selected app's `.env` (read off the EDT). */
+    private fun showEnv() {
+        val app = selectedApp() ?: return
+        val path = EnvViewer.resolvePath(app.envFile, project.basePath)
+        if (path == null) {
+            Messages.showInfoMessage(
+                project, "This app has no .env file configured. Set one in Edit App.", "Env Viewer"
+            )
+            return
+        }
+        val name = app.name.ifBlank { app.targetLabel() }
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val file = java.io.File(path)
+            val env = if (file.isFile) runCatching { EnvFile.parse(file.readText()) }.getOrNull() else null
+            ApplicationManager.getApplication().invokeLater({
+                if (disposed) return@invokeLater
+                if (env == null) {
+                    Messages.showErrorDialog(project, "Env file not found or unreadable:\n$path", "Env Viewer")
+                    return@invokeLater
+                }
+                EnvViewerDialog(project, name, path, env).show()
+            }, ModalityState.any())
         }
     }
 
