@@ -51,7 +51,7 @@ Legenda: 🔁 reaproveita do Multiple Run Monitor · 🆕 novo · 🔧 técnico.
   comando / container docker). Um clique adiciona.
 - 🆕 **Grupos / tags** (backend, frontend, infra) com cor; filtros e agregados por grupo.
 - 🆕 **Widget na status bar**: "N up · M down · mem total · ⚠ K", clica e abre o painel.
-- 🆕 **Env viewer** para apps com env conhecido (caminho `.env` informado ou ponte com run config).
+- 🆕 **Env viewer** para apps com env conhecido (caminho `.env` informado).
 - 🆕 **Múltiplos alvos por app** (ex.: app que escuta em 2 portas; ou monitorar por nome + porta).
 
 ## Fase 3 — Vira um mini gerenciador (opcional, mas poderoso)
@@ -60,7 +60,6 @@ Legenda: 🔁 reaproveita do Multiple Run Monitor · 🆕 novo · 🔧 técnico.
   as ações que faltavam para apps externos, sem depender da IDE.
 - 🆕 **Docker-aware**: ler stats de containers via `docker stats`/CLI (nome do container como alvo).
 - 🆕 **Página de Settings**: intervalos de refresh, limites padrão, cores, comportamento de alerta.
-- 🆕 **Ponte com o Multiple Run**: importar os apps que o Multiple Run lançou (o MR "publica" no monitor).
 
 ## Fase 4 — Alcance (stretch)
 
@@ -92,5 +91,4 @@ Legenda: 🔁 reaproveita do Multiple Run Monitor · 🆕 novo · 🔧 técnico.
 | Start/Stop/Restart por comando | 🆕 | 3 |
 | Docker stats | 🆕 | 3 |
 | Settings page | 🆕 | 3 |
-| Ponte Multiple Run → Monitor | 🆕 | 3 |
 | SSH / histórico persistente / regras | 🆕 | 4 |

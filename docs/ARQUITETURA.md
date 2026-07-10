@@ -106,9 +106,9 @@ observar não configura nada; quem quer controlar informa os comandos.
 
 ## 8. Relação com o Multiple Run
 
-Não competem — se complementam. Fase 3 prevê o Multiple Run **publicar** os apps que lançou para o
-App Monitor (via um pequeno ponto de extensão ou arquivo compartilhado), de modo que quem usa os dois
-vê num painel só o que subiu pela IDE **e** o que subiu por fora.
+Não competem — se complementam. O App Monitor observa alvos vivos (porta / processo / PID / container)
+qualquer que seja quem os lançou, então já cobre o que o Multiple Run sobe. Uma ponte para o Multiple
+Run **publicar** no monitor os apps que lançou foi considerada e está **fora de escopo por ora**.
 
 ---
 
