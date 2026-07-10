@@ -20,12 +20,20 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.table.JBTable
 import com.intellij.util.Alarm
+import io.github.welingtonmonteiro.appmonitor.ActionKind
+import io.github.welingtonmonteiro.appmonitor.ActionRules
+import io.github.welingtonmonteiro.appmonitor.Alert
 import io.github.welingtonmonteiro.appmonitor.AlertArm
+import io.github.welingtonmonteiro.appmonitor.AlertKind
 import io.github.welingtonmonteiro.appmonitor.AppRowFilter
 import io.github.welingtonmonteiro.appmonitor.AlertNotifier
 import io.github.welingtonmonteiro.appmonitor.AlertPolicy
 import io.github.welingtonmonteiro.appmonitor.AppCommandRunner
+import io.github.welingtonmonteiro.appmonitor.AppEvent
+import io.github.welingtonmonteiro.appmonitor.AppEventKind
 import io.github.welingtonmonteiro.appmonitor.AppEvents
+import io.github.welingtonmonteiro.appmonitor.RuleFire
+import io.github.welingtonmonteiro.appmonitor.RuleState
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSampler
 import io.github.welingtonmonteiro.appmonitor.AppMonitorSettings
 import io.github.welingtonmonteiro.appmonitor.AppMonitorStatusService
@@ -73,6 +81,9 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
 
     /** appId -> armed alert flags, so each condition notifies once until it recovers. */
     private val alertArms = HashMap<String, AlertArm>()
+
+    /** appId -> action-rule state (edge-triggering + sustained-memory timing). */
+    private val ruleStates = HashMap<String, RuleState>()
 
     /** The full (unfiltered) rows from the last refresh, and the current toolbar filter query. */
     private var lastRows: List<AppSample> = emptyList()
@@ -456,11 +467,38 @@ class AppMonitorPanel(private val project: Project) : SimpleToolWindowPanel(true
                 alertArms[sample.appId] = arm
                 if (notify) alerts.forEach { AlertNotifier.notify(project, it) }
                 events.addAll(AppEvents.fromAlerts(alerts, now))
+
+                // automated action rules (restart-on-down / sustained-memory action)
+                val (fires, ruleState) = ActionRules.evaluate(app, sample, now, ruleStates[sample.appId] ?: RuleState())
+                ruleStates[sample.appId] = ruleState
+                for (fire in fires) {
+                    events.add(AppEvent(now, AppEventKind.ACTION, fire.reason))
+                    executeRule(app, sample, fire)
+                }
             }
             sampler.recordEvents(sample.appId, events)
         }
         alertArms.keys.retainAll(rows.mapTo(HashSet()) { it.appId })
+        ruleStates.keys.retainAll(rows.mapTo(HashSet()) { it.appId })
         prevSampleById = rows.associateBy { it.appId }
+    }
+
+    /** Run one fired action rule: notify, kill the tree, or restart via the app's commands (off-EDT). */
+    private fun executeRule(app: MonitoredApp, sample: AppSample, fire: RuleFire) {
+        when (fire.kind) {
+            ActionKind.NOTIFY ->
+                AlertNotifier.notify(project, Alert(AlertKind.MEMORY, sample.name.ifBlank { app.targetLabel() }, fire.reason))
+            ActionKind.KILL -> if (sample.up) ApplicationManager.getApplication().executeOnPooledThread {
+                killTree(sample.rootPid)
+                refreshNow()
+            }
+            ActionKind.RESTART -> ApplicationManager.getApplication().executeOnPooledThread {
+                if (!AppCommandRunner.stop(app, project.basePath) && sample.up) killTree(sample.rootPid)
+                Thread.sleep(RESTART_STOP_WAIT_MS)
+                AppCommandRunner.start(app, project.basePath)
+                refreshNow()
+            }
+        }
     }
 
     private fun selectedSamples(): List<AppSample> =

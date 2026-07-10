@@ -5,6 +5,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.ColorPanel
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
@@ -35,6 +36,10 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
     private val stopCmdField = JBTextField(24)
     private val workingDirField = JBTextField(24)
     private val envFileField = JBTextField(24)
+    private val restartOnDownCheck = JBCheckBox("Restart when it goes down (needs a start command)")
+    private val memActionMbField = JBTextField(8)
+    private val memActionMinutesField = JBTextField(6)
+    private val memActionCombo = ComboBox(arrayOf("Off", "Notify", "Kill", "Restart"))
 
     init {
         title = if (existing == null) "Add App" else "Edit App"
@@ -70,6 +75,15 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         stopCmdField.text = app.stopCmd
         workingDirField.text = app.workingDir
         envFileField.text = app.envFile
+        restartOnDownCheck.isSelected = app.restartOnDown
+        memActionMbField.text = if (app.memActionMb > 0) app.memActionMb.toString() else ""
+        memActionMinutesField.text = if (app.memActionMinutes > 0) app.memActionMinutes.toString() else ""
+        memActionCombo.selectedIndex = when (app.memAction.trim().uppercase()) {
+            "NOTIFY" -> 1
+            "KILL" -> 2
+            "RESTART" -> 3
+            else -> 0
+        }
     }
 
     override fun createCenterPanel(): JComponent = FormBuilder.createFormBuilder()
@@ -87,6 +101,12 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         .addLabeledComponent("Stop command (optional):", stopCmdField)
         .addLabeledComponent("Working dir (optional):", workingDirField)
         .addLabeledComponent("Env file (optional):", envFileField)
+        .addSeparator()
+        .addComponent(JBLabel("Action rules (optional):"))
+        .addComponent(restartOnDownCheck)
+        .addLabeledComponent("If memory ≥ MB:", memActionMbField)
+        .addLabeledComponent("…held for minutes:", memActionMinutesField)
+        .addLabeledComponent("…then:", memActionCombo)
         .panel
 
     override fun getPreferredFocusedComponent(): JComponent = nameField
@@ -137,6 +157,18 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         if (memText.isNotEmpty() && (memText.toIntOrNull() == null || memText.toInt() < 0)) {
             return ValidationInfo("Memory alert must be a non-negative number of MB.", memAlertField)
         }
+        // action rules: when a memory action is chosen it needs a positive threshold; minutes >= 0
+        val minutesText = memActionMinutesField.text.trim()
+        if (minutesText.isNotEmpty() && (minutesText.toIntOrNull() == null || minutesText.toInt() < 0)) {
+            return ValidationInfo("Minutes must be a non-negative number.", memActionMinutesField)
+        }
+        val actionMbText = memActionMbField.text.trim()
+        if (actionMbText.isNotEmpty() && (actionMbText.toIntOrNull() == null || actionMbText.toInt() < 0)) {
+            return ValidationInfo("The memory rule threshold must be a non-negative number of MB.", memActionMbField)
+        }
+        if (memActionCombo.selectedIndex != 0 && (actionMbText.toIntOrNull() ?: 0) <= 0) {
+            return ValidationInfo("Set a memory threshold (MB) for the action rule.", memActionMbField)
+        }
         return null
     }
 
@@ -173,6 +205,15 @@ class AddAppDialog(project: Project?, private val existing: MonitoredApp? = null
         app.stopCmd = stopCmdField.text.trim()
         app.workingDir = workingDirField.text.trim()
         app.envFile = envFileField.text.trim()
+        app.restartOnDown = restartOnDownCheck.isSelected
+        app.memActionMb = memActionMbField.text.trim().toIntOrNull() ?: 0
+        app.memActionMinutes = memActionMinutesField.text.trim().toIntOrNull() ?: 0
+        app.memAction = when (memActionCombo.selectedIndex) {
+            1 -> "NOTIFY"
+            2 -> "KILL"
+            3 -> "RESTART"
+            else -> ""
+        }
         return app
     }
 

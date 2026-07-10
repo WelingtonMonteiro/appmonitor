@@ -1,7 +1,7 @@
 package io.github.welingtonmonteiro.appmonitor
 
 /** The kind of a recorded per-app event, shown in the memory dashboard's Events tab (Fase 4). */
-enum class AppEventKind { STARTED, STOPPED, RESTARTED, HEALTHY, UNHEALTHY, MEMORY_ALERT, CPU_ALERT, LEAK }
+enum class AppEventKind { STARTED, STOPPED, RESTARTED, HEALTHY, UNHEALTHY, MEMORY_ALERT, CPU_ALERT, LEAK, ACTION }
 
 /** One timestamped event in an app's life. */
 data class AppEvent(val timeMs: Long, val kind: AppEventKind, val detail: String)

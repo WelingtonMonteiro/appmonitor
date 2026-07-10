@@ -148,6 +148,7 @@ class MemoryChartDialog(
             AppEventKind.MEMORY_ALERT -> "Memory alert"
             AppEventKind.CPU_ALERT -> "CPU alert"
             AppEventKind.LEAK -> "Leak"
+            AppEventKind.ACTION -> "Action"
         }
     }
 

@@ -68,6 +68,16 @@ class MonitoredApp {
     /** Packed 0xRRGGBB, or 0 for "no color". */
     var colorRgb: Int = 0
 
+    // --- action rules (Fase 4) ---
+    /** When true and a [startCmd] is set, auto-run it when the app goes down. */
+    var restartOnDown: Boolean = false
+    /** Memory threshold in MB for the sustained-memory rule; 0 = the rule is off. */
+    var memActionMb: Int = 0
+    /** How long memory must stay above [memActionMb] before the rule fires, in minutes (0 = at once). */
+    var memActionMinutes: Int = 0
+    /** What the sustained-memory rule does: "NOTIFY" / "KILL" / "RESTART" (empty = off). */
+    var memAction: String = ""
+
     /** The strongly-typed **primary** target derived from the persisted fields. */
     fun toTarget(): Target = when (targetKind) {
         TargetKind.PORT -> Target.Port(port)
