@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.10.0** (multiple targets per app). See the
+**Status:** actively developed — **v0.11.0** (persistent history). See the
 [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
 what comes next.
 
@@ -42,6 +42,9 @@ found it shows **down**, and flips back to **up** the moment it reappears.
 - **Memory trend sparkline** per app, plus a **full-session memory chart** with labelled axes, the
   peak marked, a **memory-leak analysis** (growth rate, per-hour projection, R², monotonic fraction)
   and a verdict — **export** the history to CSV or the analysis to a text report.
+- **Persistent history & comparison** — each app's memory session is saved to disk and restored on
+  the next IDE start; when the process restarts, the previous session is drawn dashed under the
+  current one in the chart, with a peak comparison, so you can see if this run is heavier.
 - **HTTP health check** — set a health URL and the Status column shows **healthy** / **unhealthy**
   (2xx/3xx = healthy), on top of up/down.
 - **Alerts & notifications** — a balloon fires when an app goes **down**, when its **memory/CPU**

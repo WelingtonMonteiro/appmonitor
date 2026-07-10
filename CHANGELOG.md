@@ -6,8 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 
 ## [Unreleased]
 
-- **Fase 2 is complete.** Next up is Fase 4 (stretch): persistent history across sessions, a
-  per-app dashboard, and action rules. See [docs/ROADMAP.md](docs/ROADMAP.md).
+- Fase 4 in progress. Next: a per-app dashboard (events tab), then action rules. See
+  [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## [0.11.0] - 2026-07-10
+
+**Fase 4 (part 1) — persistent history across sessions.**
+
+### Added
+- **Persistent memory history**: each app's memory session is now saved to disk (under the IDE
+  system directory, per project) and **restored on the next IDE start**, so the memory chart and
+  leak analysis are no longer reset when you close the IDE. Persistence is best-effort and never
+  interferes with monitoring.
+- **Previous-session comparison**: when a monitored process restarts, its finished session is kept
+  as the **previous** one. The memory chart draws it **dashed underneath** the current session on a
+  shared scale, and the analysis panel adds a peak comparison (this session vs previous).
+
+### Internal
+- New `HistoryStore` (IDE-free, unit-tested against a temp dir) and `MemoryHistory.fromCsv` round-trip
+  the sessions as CSV; the sampler restores on first sight, archives on session end and flushes on close.
 
 ## [0.10.0] - 2026-07-10
 
@@ -137,7 +154,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.7.0...v0.8.0

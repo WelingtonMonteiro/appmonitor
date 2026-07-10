@@ -101,4 +101,19 @@ class MemoryHistoryTest {
     fun csvOfEmptyHistoryIsJustTheHeader() {
         assertEquals("timestamp_ms,iso_time,rss_kb,percent\n", MemoryHistory.toCsv(emptyList()))
     }
+
+    @Test
+    fun fromCsvRoundTripsToCsvAndSkipsGarbage() {
+        val original = listOf(Sample(1000L, 2048L, 12.5), Sample(3000L, 4096L, 25.0))
+        val restored = MemoryHistory.fromCsv(MemoryHistory.toCsv(original))
+        assertEquals(2, restored.size)
+        assertEquals(original[0].timeMs, restored[0].timeMs)
+        assertEquals(original[0].rssKb, restored[0].rssKb)
+        assertEquals(12.5, restored[0].percent, 0.001)
+        assertEquals(4096L, restored[1].rssKb)
+
+        // header-only or malformed input yields no samples, never an exception
+        assertTrue(MemoryHistory.fromCsv("timestamp_ms,iso_time,rss_kb,percent\n").isEmpty())
+        assertTrue(MemoryHistory.fromCsv("not,a,valid\nx,y,z,w\n").isEmpty())
+    }
 }
