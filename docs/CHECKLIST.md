@@ -11,7 +11,7 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 
 - [x] **Linguagem principal: Kotlin** (recomendada pela JetBrains para plugins novos).
 - [x] **Classes reaproveitadas ficam em Java temporariamente** (interop Kotlin↔Java), migradas
-      **uma por vez** depois via *Code → Convert Java File to Kotlin File* do IntelliJ.
+      **uma por vez** depois. ✅ **Concluído em v0.13.1: projeto 100% Kotlin** (era só o `ProcessStatsSampler`).
 - [x] **Escopo da primeira leva: Fase 0 (MVP) completo.**
 - [x] id do plugin: `io.github.welingtonmonteiro.appmonitor` (vendor criado no Marketplace).
 - [ ] Nome final (provisório: "App Monitor" — ver candidatos no README).
@@ -73,7 +73,7 @@ Marque `[x]` conforme entregar. Legenda: 🔁 reaproveita do MR · 🆕 novo · 
 
 | Classe (MR) | Fase | Copiada | Windows | → Kotlin | Observação |
 |---|---|:--:|:--:|:--:|---|
-| `ProcessStatsSampler` | 0 | [x] | [x] | [ ] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Camada Windows (netstat/PowerShell) adicionada. Fica em Java por ora. |
+| `ProcessStatsSampler` | 0 | [x] | [x] | [x] | ps/lsof, árvore, mem/cpu/portas/uptime/kill. Camada Windows (netstat/PowerShell) adicionada. **Convertido para Kotlin (v0.13.1) — projeto 100% Kotlin.** |
 | `MemoryHistory` (+ `Analysis`) | 1 | [x] | n/a | [x] | histórico + análise de leak (slope/R²/monótono). **Escrito direto em Kotlin.** |
 | `MemoryChartDialog` | 1 | [x] | n/a | [x] | gráfico de sessão + análise + **breakdown por processo** (aba Processes) + export. **Reescrito em Kotlin**, sem deps do MR. |
 | Renderers de tabela (sparkline/ports/status) | 0–1 | [ ] | n/a | [ ] | reaproveitáveis do `MultirunMonitorPanel`. |

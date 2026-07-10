@@ -5,7 +5,7 @@
 > service). Add an app by **name + port** and watch its memory, CPU, listening ports, uptime and
 > up/down status refresh live, like `docker stats`.
 
-**Status:** actively developed — **v0.13.0** (action rules). See the
+**Status:** actively developed — **v0.13.1** (now 100% Kotlin). See the
 [CHANGELOG](CHANGELOG.md) for what changed in each version and the [ROADMAP](docs/ROADMAP.md) for
 what comes next.
 
@@ -100,7 +100,7 @@ export JAVA_HOME=/path/to/jbr
 ./gradlew test             # run the unit tests
 ```
 
-Built on the **IntelliJ Platform**; primary language **Kotlin**.
+Built on the **IntelliJ Platform**, written entirely in **Kotlin**.
 
 ## Roadmap & changelog
 

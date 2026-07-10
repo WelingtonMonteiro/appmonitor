@@ -31,6 +31,11 @@
 
     <change-notes>
         <![CDATA[
+        <p><strong>0.13.1</strong> (internal):</p>
+        <ul>
+            <li>Internal: the plugin is now <b>100% Kotlin</b> - the last Java class (the process/port
+                sampler) was converted, with no change in behaviour.</li>
+        </ul>
         <p><strong>0.13.0</strong> (action rules):</p>
         <ul>
             <li>New: <b>automated action rules</b> per app. Tick <b>Restart when it goes down</b> to

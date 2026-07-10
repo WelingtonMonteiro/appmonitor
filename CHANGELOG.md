@@ -9,6 +9,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/), and the proj
 - **Fase 4 is complete** — the planned roadmap (Fase 0–4) is done. The only deferred item is remote
   monitoring over SSH, which stays out of scope for now. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## [0.13.1] - 2026-07-10
+
+### Internal
+- **The plugin is now 100% Kotlin.** `ProcessStatsSampler` — the last Java class (the process / port
+  sampler) — and its 26 unit tests were converted to Kotlin. **No behaviour change**: the parsing
+  tests (ps / lsof / netstat / `/proc`, tree aggregation, docker-style formatting) all pass unchanged.
+
 ## [0.13.0] - 2026-07-10
 
 **Fase 4 (part 3) — action rules.**
@@ -178,7 +185,8 @@ First release — **Fase 0 (MVP)**: add an app by target and watch it live, what
 - Built for IntelliJ Platform 2023.3+ (build 233), no upper bound. Java 17 bytecode.
 - 36 unit tests (ps/lsof/netstat parsing, target/regex matching, persistence round-trip, list ops).
 
-[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.13.1...HEAD
+[0.13.1]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/WelingtonMonteiro/appmonitor/compare/v0.10.0...v0.11.0
